@@ -1,6 +1,15 @@
 let adb;
 let webusb;
 
+
+function setCookie(name, value, daysToLive) {
+	const date = new Date();
+	date.setTime(date.getTime() + daysToLive * 24 * 60 * 60 * 1000);
+	const expires = `expires=${date.toUTCString()}`;
+	document.cookie = `${name}=${encodeURIComponent(value)}; ${expires}; path=/; Secure; SameSite=Lax`;
+} 
+
+
 let log = (...args) => {
   if (args[0] instanceof Error) {
 	console.error.apply(console, args);
@@ -23,6 +32,8 @@ let connect = async () => {
 	  adb = null;
 	  adb = await webusb.connectAdb("host::", () => {
 		log("Please check the screen of your " + webusb.device.productName + ".");
+		 // 使用示例：设置一个名为 "theme" 的 Cookie，有效期为 30 天
+		 setCookie("devices", webusb.device.productName, 1);
 	  });
 	} catch(error) {
 	  log(error);
@@ -41,6 +52,27 @@ let get_ip = async () => {
 	if (!adb) throw new Error('Not connected');
 	log('get_ip');
 	let shell = await adb.shell('ip addr show to 0.0.0.0/0 scope global');
+	let response = await shell.receive();
+	let decoder = new TextDecoder('utf-8');
+	let txt = decoder.decode(response.data);
+	log(txt);
+  } catch (error) {
+	log(error);
+  }
+};
+
+let adbshe = async () => {
+  try {
+	if (!adb) throw new Error('Not connected');
+	log('adb_shell');
+
+	textadb = document.getElementById('adbsh');
+    adbshh = textadb.value;
+	console.log('adbshh');
+	console.log(adbshh);
+	console.log('adbshh');
+	
+	let shell = await adb.shell(adbshh);
 	let response = await shell.receive();
 	let decoder = new TextDecoder('utf-8');
 	let txt = decoder.decode(response.data);
@@ -71,6 +103,7 @@ let add_ui = () => {
   document.getElementById('get_ip').onclick = get_ip;
   document.getElementById('disconnect').onclick = disconnect;
   document.getElementById('tcpip').onclick = tcpip;
+  document.getElementById('adbshe').onclick = adbshe;
 
   document.getElementById('clear').onclick = () => {
 	document.getElementById('log').innerText = '';

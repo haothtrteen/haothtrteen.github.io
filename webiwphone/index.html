@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="zh-cn" class="mdui-theme-auto">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magisk Web UI</title>
+    <title>Iwphone Web</title>
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/style2.css">
     <link rel="stylesheet" href="./mdui/mdui.css">
@@ -137,7 +137,7 @@
         <div id="webbox-page" class="page">
 
             <div class="card">
-            <br />
+                <br />
                 <h2 class="card-title">AdbUsb Power</h2>
 
 
@@ -169,6 +169,9 @@
 
                     <!-- </form> -->
 
+                    <mdui-button full-width id="get_ip">Get IP addr</mdui-button>
+                    <br />
+
 
 
                     <hr class="mdui-divider">
@@ -176,38 +179,53 @@
 
 
 
-                <br />
-                <mdui-button full-width id="get_ip">Get IP addr</mdui-button>
-                <br />
+               
                 <br />
 
                 <!-- <input type="text" id="port" value="5555" /> -->
-                <mdui-text-field id="port" label="请输入端口" value="5555" icon="upload_file--rounded"
-                    select="blur" variant="outlined" type="text">端口</mdui-text-field>
-                <div class="mdui-list-item-content">使用本功能即代表同意<a href="https://fhprotect.com/home/协议.html"
-                        target="_blank">WebIwhpone的使用条款</a></div>
+                <mdui-text-field id="port" label="请输入端口" value="5555" icon="upload_file--rounded" select="blur"
+                    variant="outlined" type="text">端口</mdui-text-field>
+                    <br />
+                    <br />
                 <mdui-button full-width id="tcpip" value="tcpip">tcpip</mdui-button>
                 <br />
                 <br />
 
+                <mdui-text-field id="adbsh" label="请输入Shell命令" value="getprop ro.product.model" icon="upload_file--rounded" select="blur"
+                variant="outlined" type="text">shell</mdui-text-field>
+                <br />
+                <br />
+            <mdui-button full-width id="adbshe">start</mdui-button>
+            <br />
+           
+
+            <hr class="mdui-divider">
+
+            <br />
+
                 <mdui-button full-width id="disconnect">Disconnect</mdui-button>
                 <br />
                 <br />
-                <h2>Messages
-                  
-                 <mdui-button loading  full-width id="clear" variant="outlined">
+                <h2>Messages</h2>
+                <br />
+                <mdui-card variant="outlined" style="width: 100%;height: 100%">
+                    <br />
+                    <pre id="log"></pre>
+                    <br />
+                </mdui-card>
+                <br />
+
+                <mdui-button loading full-width id="clear" variant="outlined">
                     clear
-                 </mdui-button>
-                </h2>
-                <pre id="log"></pre>
-                </div>
+                </mdui-button>
+            </div>
 
 
-                <div class="card">
-                    <h2 class="card-title">可视化三方USBadb</h2>
-                    <iframe src="webadb.html" width="100%" hreight="100%"></iframe>
-                </div>
-           
+            <div class="card">
+                <h2 class="card-title">可视化三方USBadb</h2>
+                <iframe src="webadb.html" width="100%" hreight="100%"></iframe>
+            </div>
+
 
 
         </div>
