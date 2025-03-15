@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magisk Web UI</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/style2.css">
+    <link rel="stylesheet" href="./mdui/mdui.css">
+    <script src="./mdui/mdui.global.js"></script>
+    <script src="./mdui/jquery.min.js"></script>
+    <script src="./webadb.js/webadb.js"></script>
+    <script src="./work.js"></script>
+    <script src="./webjs.js"></script>
+
+    <link rel="manifest" href="manifest-webadb.json" />
+    <!-- <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/3/w3.css" /> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Outlined -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+    <!-- Rounded -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- Sharp -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+
+    <!-- Two Tone -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+
+    <mdui-dialog close-on-overlay-click class="example-headline-slot">
+        <span slot="headline">mdui对话框标题</span>
+        <span slot="description">mdUI对话框内容</span>
+    </mdui-dialog>
+
+    <mdui-dialog close-on-overlay-click headline="请选择一种连接设备的方式?" class="example-action">
+        <mdui-button slot="action" variant="text" id="cancelButton">模式一</mdui-button>
+        <mdui-button slot="action" variant="tonal" id="deleteButton">模式二</mdui-button>
+    </mdui-dialog>
+
+
+
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">Iwphone Web</div>
+        <button class="menu-btn">≡</button>
+    </header>
+    <!-- 主内容容器 -->
+    <div class="page-container">
+        <!-- 首页 -->
+        <div id="home-page" class="page active">
+            <div class="card">
+                <h2 class="card-title">Iwphone 状态</h2>
+                <div class="status-item">
+
+
+                    <section class="card">
+                        <div class="card-header">状态管理</div>
+                        <div class="card-content">
+                            <ul class="module-list">
+
+                                <li class="module-item">
+                                    <div>
+                                        <h3>设备名称</h3>
+                                        <p>Devices: 1.0.0</p>
+                                    </div>
+                                    <span class="module-status inactive">未激活</span>
+                                </li>
+
+                                <li class="module-item">
+                                    <div>
+                                        <h3>Web Adb状态</h3>
+                                        <p>Reversion: 1.0.0</p>
+                                    </div>
+                                    <span class="module-status active">未连接</span>
+                                </li>
+
+                            </ul>
+                        </div>
+                    </section>
+
+                    <span>📜</span>
+                    <span>版本：</span>
+
+                    <span class="version">v26.1</span>
+
+                </div>
+                <div class="button-group">
+                    <br>
+                    <mdui-button id="startadb" class="button primary-btn install-btn">安装驱动</mdui-button>
+
+                    <mdui-button class="button secondary-btn">完全卸载</mdui-button>
+                </div>
+            </div>
+
+            <section class="card">
+                <div class="card-header">日志</div>
+                <div class="card-content">
+                    <div class="log-entry">
+                        <div class="log-timestamp">[2025-03-14 12:00:00]</div>
+                        <p>初始化完成</p>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-timestamp">[2025-03-14 12:01:00]</div>
+                        <p>远程adb加载成功</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+
+        <!-- 日志页面 -->
+        <div id="logs-page" class="page">
+            <div class="card">
+                <h2 class="card-title">系统日志</h2>
+                <div class="log-list" id="log-list"></div>
+            </div>
+        </div>
+
+        <!-- 模块页面 -->
+        <div id="modules-page" class="page">
+            <div class="card">
+                <h2 class="card-title">已安装模块</h2>
+                <div class="module-list" id="module-list"></div>
+            </div>
+        </div>
+
+
+
+        <div id="webbox-page" class="page">
+
+            <div class="card">
+            <br />
+                <h2 class="card-title">AdbUsb Power</h2>
+
+
+                <div id="loadf" style="display: block;">
+                    <!-- <form id="myForm" action="./upload.php" method="post" enctype="multipart/form-data"> -->
+
+                    <mdui-select label="usb-device" icon="upload_file--rounded" select="blur" variant="outlined"
+                        type="text" placeholder="USBadb" value="请连接设备">
+
+                        <!-- <div class="mdui-container">
+                                <div class="mdui-row">
+                                    <div class="mdui-col-xs-12 mdui-col-sm-6 mdui-col-md-6">
+                                        <div class="mdui-textfield">
+                                            <input type="file" name="fileToUpload" id="fileToUpload">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> -->
+
+                    </mdui-select>
+
+                    <mdui-checkbox>
+                        我同意接受
+                        <a href="https://fhprotect.com/home/协议.html" target="_blank">WebIwphone的使用条款</a>
+                    </mdui-checkbox>
+                    <mdui-button full-width id="connect">Connect</mdui-button>
+                    <br />
+
+
+                    <!-- </form> -->
+
+
+
+                    <hr class="mdui-divider">
+                </div>
+
+
+
+                <br />
+                <mdui-button full-width id="get_ip">Get IP addr</mdui-button>
+                <br />
+                <br />
+
+                <!-- <input type="text" id="port" value="5555" /> -->
+                <mdui-text-field id="port" label="请输入端口" value="5555" icon="upload_file--rounded"
+                    select="blur" variant="outlined" type="text">端口</mdui-text-field>
+                <div class="mdui-list-item-content">使用本功能即代表同意<a href="https://fhprotect.com/home/协议.html"
+                        target="_blank">WebIwhpone的使用条款</a></div>
+                <mdui-button full-width id="tcpip" value="tcpip">tcpip</mdui-button>
+                <br />
+                <br />
+
+                <mdui-button full-width id="disconnect">Disconnect</mdui-button>
+                <br />
+                <br />
+                <h2>Messages
+                  
+                 <mdui-button loading  full-width id="clear" variant="outlined">
+                    clear
+                 </mdui-button>
+                </h2>
+                <pre id="log"></pre>
+                </div>
+
+
+                <div class="card">
+                    <h2 class="card-title">可视化三方USBadb</h2>
+                    <iframe src="webadb.html" width="100%" hreight="100%"></iframe>
+                </div>
+           
+
+
+        </div>
+
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-page="home-page">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">首页</span>
+            </div>
+            <div class="nav-item" data-page="logs-page">
+                <span class="nav-icon">📜</span>
+                <span class="nav-text">日志</span>
+            </div>
+            <div class="nav-item" data-page="modules-page">
+                <span class="nav-icon">🧩</span>
+                <span class="nav-text">模块</span>
+            </div>
+            <div class="nav-item" data-page="webbox-page">
+                <span class="nav-icon">🧩</span>
+                <span class="nav-text">adb</span>
+            </div>
+        </nav>
+
+
+
+        <!-- <mdui-navigation-bar >
+          <mdui-navigation-bar-item icon="shopping_cart" value="item-1">首页</mdui-navigation-bar-item>
+          <mdui-navigation-bar-item icon="commute" value="item-2">Item 2</mdui-navigation-bar-item>
+          <mdui-navigation-bar-item icon="people" value="item-3">Item 3</mdui-navigation-bar-item>
+        </mdui-navigation-bar> -->
+
+
+
+        <script src="script.js"></script>
+</body>
+
+</html>
