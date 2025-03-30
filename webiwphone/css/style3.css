@@ -25,8 +25,8 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     position: relative;
     max-width: 600px;   /* 新增 */
-     min-width: 30%;  /* 新增 */
-    width: 70%;         /* 新增 */
+     min-width: 70%;  /* 新增 */
+    /* width: 70%;         新增 */
     margin: 0 auto;     /* 新增 */
     box-sizing: border-box; /* 新增 */
 }
