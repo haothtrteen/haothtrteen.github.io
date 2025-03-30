@@ -7,6 +7,7 @@
     <title>Iwphone Web</title>
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/style2.css">
+    <link rel="stylesheet" href="./css/style3.css">
     <link rel="stylesheet" href="./mdui/mdui.css">
     <script src="./mdui/mdui.global.js"></script>
     <script src="./mdui/jquery.min.js"></script>
@@ -73,30 +74,72 @@
                                     <span class="module-status inactive">未激活</span>
                                 </li>
 
-                                <li class="module-item">
-                                    <div>
-                                        <h3>Web Adb状态</h3>
-                                        <p>Reversion: 1.0.0</p>
-                                    </div>
-                                    <span class="module-status active">未连接</span>
-                                </li>
 
-                            </ul>
-                        </div>
+
+                                <div class="dashboard">
+                                    <!-- 内存卡片 -->
+                                    <div class="haocard memory-haocard">
+                                        <div class="haocard-header">内存</div>
+                                        <div class="circle"></div>
+                                        <div class="legend">
+                                            <span class="zram">Zram</span>
+                                            <span class="glfh">|</span>
+                                            <span class="swap">Swap</span>
+                                        </div>
+                                    </div>
+                            
+                                    <!-- CPU卡片 -->
+                                    
+                            
+                                    <!-- 设备卡片 -->
+                                    <div class="haocard">
+                                        <div class="haocard-header">设备</div>
+                                        <div class="haocard-content">Xiaomi</div>
+                                        <div class="sub-content"><span>Xiaomi</span> 2407FRK8EC</div>
+                                    </div>
+                            
+                                    <!-- 系统卡片 -->
+                                    <div class="haocard">
+                                        <div class="haocard-header">系统</div>
+                                        <div class="haocard-content">Android15</div>
+                                        <div class="sub-content">
+                                            <span class="red-text">安卓</span> Android15
+                                        </div>
+                                    </div>
+                            
+                                    <!-- 设备模式卡片 -->
+                                    <div class="haocard">
+                                        <div class="haocard-header">设备模式</div>
+                                        <div class="haocard-content">系统桌面</div>
+                                        <div class="sub-content">
+                                            <span class="red-text">系统</span> 系统桌面
+                                        </div>
+                                    </div>
+                            
+                                    <!-- 状态卡片 -->
+                                    <div class="haocard">
+                                        <div class="haocard-header">Adb状态</div>
+                                        <div class="haocard-content">已连接</div>
+                                        <div class="sub-content">
+                                            <span style="color: #81e6d9;">Adb access</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="button-group">
+                                    <br>
+                                    <mdui-button id="startadb" class="button primary-btn install-btn">安装驱动</mdui-button>
+                
+                                    <mdui-button class="button secondary-btn">完全卸载</mdui-button>
+                                </div>
                     </section>
 
-                    <span>📜</span>
-                    <span>版本：</span>
-
-                    <span class="version">v26.1</span>
+                   
 
                 </div>
-                <div class="button-group">
-                    <br>
-                    <mdui-button id="startadb" class="button primary-btn install-btn">安装驱动</mdui-button>
-
-                    <mdui-button class="button secondary-btn">完全卸载</mdui-button>
-                </div>
+               
             </div>
 
             <section class="card">
@@ -179,29 +222,36 @@
 
 
 
-               
+
                 <br />
 
                 <!-- <input type="text" id="port" value="5555" /> -->
                 <mdui-text-field id="port" label="请输入端口" value="5555" icon="upload_file--rounded" select="blur"
                     variant="outlined" type="text">端口</mdui-text-field>
-                    <br />
-                    <br />
+                <br />
+                <br />
                 <mdui-button full-width id="tcpip" value="tcpip">tcpip</mdui-button>
                 <br />
                 <br />
 
-                <mdui-text-field id="adbsh" label="请输入Shell命令" value="getprop ro.product.model" icon="upload_file--rounded" select="blur"
-                variant="outlined" type="text">shell</mdui-text-field>
+                <mdui-text-field id="adbsh" label="请输入Shell命令" value="getprop ro.product.model"
+                    icon="upload_file--rounded" select="blur" variant="outlined" type="text">shell</mdui-text-field>
                 <br />
                 <br />
-            <mdui-button full-width id="adbshe">start</mdui-button>
-            <br />
-           
+                <mdui-button full-width id="adbshe">start</mdui-button>
+                <br />
 
-            <hr class="mdui-divider">
+                <mdui-text-field id="adbshh" label="请输入Adb命令" value="push" icon="upload_file--rounded" select="blur"
+                variant="outlined" type="text">adb</mdui-text-field>
+                <br />
+                <br />
+                <mdui-button full-width id="adbsheh">start</mdui-button>
+                <br />
 
-            <br />
+
+                <hr class="mdui-divider">
+
+                <br />
 
                 <mdui-button full-width id="disconnect">Disconnect</mdui-button>
                 <br />

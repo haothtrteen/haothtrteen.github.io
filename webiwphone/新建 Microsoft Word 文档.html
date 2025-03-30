@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统监控面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .card-header {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        /* 内存卡片 */
+        .memory-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .circle {
+            width: 140px;
+            height: 140px;
+            border: 8px solid #999;
+            border-radius: 50%;
+            margin: 40px 0;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        .zram { color: #81e6d9; }
+        .swap { color: #ff4757; }
+
+        /* CPU卡片 */
+        .cpu-card .cpu-value {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .chart {
+            height: 180px;
+            position: relative;
+        }
+
+        .line {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #666;
+            transform: rotate(25deg);
+        }
+
+        .weekday {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* 通用卡片内容样式 */
+        .card-content {
+            font-size: 20px;
+            margin: 20px 0;
+        }
+
+        .sub-content {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .sub-content span {
+            color: #81e6d9;
+        }
+
+        .red-text {
+            color: #ff4757;
+        }
+
+        /* 卡片状态标记 */
+        .card::after {
+            content: '';
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 32px;
+            height: 16px;
+            background: #81e6d9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- 内存卡片 -->
+        <div class="card memory-card">
+            <div class="card-header">内存</div>
+            <div class="circle"></div>
+            <div class="legend">
+                <span class="zram">Zram</span>
+                <span class="swap">Swap</span>
+            </div>
+        </div>
+
+        <!-- CPU卡片 -->
+        <div class="card cpu-card">
+            <div class="card-header">CPU</div>
+            <div class="cpu-value">4543</div>
+            <div class="chart">
+                <div class="line"></div>
+            </div>
+            <div class="weekday">M T W T F S S</div>
+        </div>
+
+        <!-- 设备卡片 -->
+        <div class="card">
+            <div class="card-header">设备</div>
+            <div class="card-content">Xiaomi</div>
+            <div class="sub-content"><span>Xiaomi</span> 2407FRK8EC</div>
+        </div>
+
+        <!-- 系统卡片 -->
+        <div class="card">
+            <div class="card-header">系统</div>
+            <div class="card-content">Android15</div>
+            <div class="sub-content">
+                <span class="red-text">安卓</span> Android15
+            </div>
+        </div>
+
+        <!-- 设备模式卡片 -->
+        <div class="card">
+            <div class="card-header">设备模式</div>
+            <div class="card-content">系统桌面</div>
+            <div class="sub-content">
+                <span class="red-text">系统</span> 系统桌面
+            </div>
+        </div>
+
+        <!-- 状态卡片 -->
+        <div class="card">
+            <div class="card-header">状态</div>
+            <div class="card-content">已连接</div>
+            <div class="sub-content">
+                <span style="color: #81e6d9;">adb access</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
