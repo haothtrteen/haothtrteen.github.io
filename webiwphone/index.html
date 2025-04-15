@@ -8,10 +8,12 @@
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/style2.css">
     <link rel="stylesheet" href="./css/style3.css">
+    <link rel="stylesheet" href="./css/style4.css">
     <link rel="stylesheet" href="./mdui/mdui.css">
     <script src="./mdui/mdui.global.js"></script>
     <script src="./mdui/jquery.min.js"></script>
     <script src="./webadb.js/webadb.js"></script>
+    <script src="./webadb.js/webhl.js"></script>
     <script src="./work.js"></script>
     <script src="./webjs.js"></script>
 
@@ -87,17 +89,17 @@
                                             <span class="swap">Swap</span>
                                         </div>
                                     </div>
-                            
+
                                     <!-- CPU卡片 -->
-                                    
-                            
+
+
                                     <!-- 设备卡片 -->
                                     <div class="haocard">
                                         <div class="haocard-header">设备</div>
                                         <div class="haocard-content">Xiaomi</div>
                                         <div class="sub-content"><span>Xiaomi</span> 2407FRK8EC</div>
                                     </div>
-                            
+
                                     <!-- 系统卡片 -->
                                     <div class="haocard">
                                         <div class="haocard-header">系统</div>
@@ -106,7 +108,7 @@
                                             <span class="red-text">安卓</span> Android15
                                         </div>
                                     </div>
-                            
+
                                     <!-- 设备模式卡片 -->
                                     <div class="haocard">
                                         <div class="haocard-header">设备模式</div>
@@ -115,7 +117,7 @@
                                             <span class="red-text">系统</span> 系统桌面
                                         </div>
                                     </div>
-                            
+
                                     <!-- 状态卡片 -->
                                     <div class="haocard">
                                         <div class="haocard-header">Adb状态</div>
@@ -131,15 +133,15 @@
                                 <div class="button-group">
                                     <br>
                                     <mdui-button id="startadb" class="button primary-btn install-btn">安装驱动</mdui-button>
-                
+
                                     <mdui-button class="button secondary-btn">完全卸载</mdui-button>
                                 </div>
                     </section>
 
-                   
+
 
                 </div>
-               
+
             </div>
 
             <section class="card">
@@ -165,6 +167,25 @@
                 <h2 class="card-title">系统日志</h2>
                 <div class="log-list" id="log-list"></div>
             </div>
+
+            <mdui-container>
+                <!-- 设备连接区域 -->
+                <mdui-row>
+                    <mdui-col span="6">
+                        <mdui-button id="connect-btn" icon="usb" type="button">连接设备</mdui-button>
+                        <mdui-button id="disconnect-btn" icon="usb_off" type="button" disabled>断开连接</mdui-button>
+                        <mdui-button id="mirror-btn" icon="cast" type="button" disabled>开始投屏</mdui-button>
+                    </mdui-col>
+                </mdui-row>
+        
+                <!-- 屏幕画布容器 -->
+                <div id="screen-container">
+                    <canvas id="screen-canvas"></canvas>
+                </div>
+        
+                <!-- 日志区域 -->
+               <!--  <pre id="log"></pre> -->
+            </mdui-container>
         </div>
 
         <!-- 模块页面 -->
@@ -185,12 +206,13 @@
 
 
                 <div id="loadf" style="display: block;">
-                    <!-- <form id="myForm" action="./upload.php" method="post" enctype="multipart/form-data"> -->
+
+                    <!--   <form id="myForm" action="./upload.php" method="post" enctype="multipart/form-data">
 
                     <mdui-select label="usb-device" icon="upload_file--rounded" select="blur" variant="outlined"
                         type="text" placeholder="USBadb" value="请连接设备">
 
-                        <!-- <div class="mdui-container">
+                        <div class="mdui-container">
                                 <div class="mdui-row">
                                     <div class="mdui-col-xs-12 mdui-col-sm-6 mdui-col-md-6">
                                         <div class="mdui-textfield">
@@ -198,22 +220,20 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> -->
+                            </div>
 
                     </mdui-select>
+
+                </form>  -->
+
+                    <br />
+                    <mdui-button full-width id="connect">Connect</mdui-button>
 
                     <mdui-checkbox>
                         我同意接受
                         <a href="https://fhprotect.com/home/协议.html" target="_blank">WebIwphone的使用条款</a>
                     </mdui-checkbox>
-                    <mdui-button full-width id="connect">Connect</mdui-button>
-                    <br />
 
-
-                    <!-- </form> -->
-
-                    <mdui-button full-width id="get_ip">Get IP addr</mdui-button>
-                    <br />
 
 
 
@@ -224,6 +244,8 @@
 
 
                 <br />
+                <mdui-button full-width id="get_ip">Get IP addr</mdui-button>
+                <br />
 
                 <!-- <input type="text" id="port" value="5555" /> -->
                 <mdui-text-field id="port" label="请输入端口" value="5555" icon="upload_file--rounded" select="blur"
@@ -232,6 +254,40 @@
                 <br />
                 <mdui-button full-width id="tcpip" value="tcpip">tcpip</mdui-button>
                 <br />
+                <!--  <mdui-text-field id="adbshh" label="请输入Adb命令" value="push" icon="upload_file--rounded" select="blur"
+                variant="outlined" type="text">adb</mdui-text-field>
+                <br />
+                <br />
+                <mdui-button full-width id="adbsheh">start</mdui-button>
+                <br /> -->
+
+                <hr class="mdui-divider">
+
+                <!--  <input type="text" id="pull-path" placeholder="设备文件路径（如 /sdcard/test.txt）" /> -->
+
+                <br />
+                <mdui-text-field id="pull-path" label="拉取文件" icon="upload_file--rounded" select="blur"
+                    variant="outlined" type="text" placeholder="设备文件路径（如 /sdcard/test.txt）">adb</mdui-text-field>
+                <br />
+                <br />
+                <mdui-button full-width id="pull-btn">拉取文件</mdui-button>
+
+                <br />
+
+
+                <mdui-select label="推送文件" icon="upload_file--rounded" select="blur" variant="outlined" type="text"
+                    placeholder="选择需要推送的电脑文件路径">
+                    <input type="file" id="push-file" />
+                </mdui-select>
+                <br />
+                <br />
+                <mdui-text-field id="device-path" label="设备路径" icon="upload_file--rounded" select="blur"
+                    variant="outlined" type="text" placeholder="设备路径（如 /sdcard/）">adb</mdui-text-field>
+                <br />
+                <br />
+
+                <mdui-button full-width id="push-btn">推送文件</mdui-button>
+
                 <br />
 
                 <mdui-text-field id="adbsh" label="请输入Shell命令" value="getprop ro.product.model"
@@ -241,16 +297,7 @@
                 <mdui-button full-width id="adbshe">start</mdui-button>
                 <br />
 
-                <mdui-text-field id="adbshh" label="请输入Adb命令" value="push" icon="upload_file--rounded" select="blur"
-                variant="outlined" type="text">adb</mdui-text-field>
-                <br />
-                <br />
-                <mdui-button full-width id="adbsheh">start</mdui-button>
-                <br />
-
-
                 <hr class="mdui-divider">
-
                 <br />
 
                 <mdui-button full-width id="disconnect">Disconnect</mdui-button>

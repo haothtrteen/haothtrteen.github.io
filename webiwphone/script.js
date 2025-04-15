@@ -21,6 +21,8 @@ function switchPage(pageId) {
         item.classList.remove('active');
         if(item.dataset.page === pageId) item.classList.add('active');
     });
+
+    updateButtonState();
 }
 
 function initModules() {
