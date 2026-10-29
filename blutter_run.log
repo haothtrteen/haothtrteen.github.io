@@ -1,0 +1,27 @@
+Dart version: 3.13.5, Snapshot: 0451907c2eaa8467e848c0067bfe8ed4, Target: android arm64
+flags: product no-asan no-msan no-tsan no-shared_data no-code_comments no-dwarf_stack_traces arm64 android compressed-pointers
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /workspace/blutter/build/blutter_dartvm3.13.5_android_arm64
+[1/2] Building CXX object CMakeFiles/blutter_dartvm3.13.5_android_arm64.dir/src/FridaWriter.cpp.o
+[2/2] Linking CXX executable blutter_dartvm3.13.5_android_arm64
+-- Install configuration: "Release"
+-- Installing: /workspace/blutter/bin/blutter_dartvm3.13.5_android_arm64
+/workspace/blutter/blutter/src/DartTypes.cpp: 330: error: Invalid abstract type
+Traceback (most recent call last):
+  File "/workspace/blutter/blutter.py", line 255, in <module>
+    main(args.indir, args.outdir, args.rebuild, args.vs_sln, args.no_analysis)
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/blutter/blutter.py", line 237, in main
+    main2(libapp_file, libflutter_file, outdir, rebuild_blutter, create_vs_sln, no_analysis)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/blutter/blutter.py", line 228, in main2
+    build_and_run(input)
+    ~~~~~~~~~~~~~^^^^^^^
+  File "/workspace/blutter/blutter.py", line 217, in build_and_run
+    subprocess.run([input.blutter_file, '-i', input.libapp_path, '-o', input.outdir], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.pyenv/versions/3.14.8/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/workspace/blutter/bin/blutter_dartvm3.13.5_android_arm64', '-i', '/workspace/extract/lib/arm64-v8a/libapp.so', '-o', '/workspace/out']' died with <Signals.SIGABRT: 6>.
