@@ -1,0 +1,242 @@
+(function () {
+try {
+var noMoreRe = /(没有更多|暂无更多|沒有更多|暫無更多|已加载全部|已载入全部|已加载完|已載入完|加载完毕|載入完畢|已经到底|已經到底|到底了|no\s*more|end\s*of\s*(\?:list|results|page)|all\s*loaded|reached\s*the\s*end|keine\s*weitere|no\s*hay\s*más)/i;
+var nextTextRe = /^(\?:下一页|下页|下一頁|下一頁面|次へ|次のページ|次ページ|다음(\?:\s*페이지)\?|next(\?:\s*page)\?|nextpage|older(\?:\s*(\?:posts|entries))\?|suivant|siguiente|weiter|следующая|далее|›|»|>|→|>>|❯|⟩)$/i;
+var moreTextRe = /(加载更多|加载更多内容|載入更多|載入更多內容|显示更多|显示更多内容|顯示更多|顯示更多內容|查看更多|查看更多內容|点击加载|點擊載入|展开更多|展開更多|更多内容|更多內容|查看全部|查看全部內容|load\s*more|show\s*more|view\s*more|see\s*more|read\s*more|more\s*(\?:posts|videos|items|entries)|older\s*(\?:posts|entries)|mehr\s*(\?:laden|anzeigen)|voir\s*plus|afficher\s*plus|charger\s*plus|ver\s*más|cargar\s*más|mostrar\s*más|もっと(\?:見る|読み込む)|더\s*보기|показать\s*ещё|загрузить\s*ещё|ещё)/i;
+var bareMoreRe = /^(\?:more|more\.\.\.|more…)$/i;
+var badSlotRe = /(^|[\s_-])(recommend|related|relation|rank|ranklist|hot|slide|swiper|guess|like|blogroll|comment|advert|ads\?|banner|sidebar|side-bar|friend)([\s_-]|$)/i;
+var classHintRe = /(load[-_]\?more|loadmore|view[-_]\?more|show[-_]\?more|next[-_]\?page|nextpage|pagination[-_]\?next|page[-_]\?next|(^|[\s_-])more([\s_-]|$))/i;
+
+function classOf(el) {
+if (!el) return '';
+var c = el.className;
+if (c && c.baseVal !== undefined) c = c.baseVal;
+return String(c || '');
+}
+function visible(el) {
+if (!el) return false;
+var rect = el.getBoundingClientRect \? el.getBoundingClientRect() : null;
+if (!rect || rect.width < 8 || rect.height < 8) return false;
+var style = window.getComputedStyle \? window.getComputedStyle(el) : null;
+if (style && (style.visibility === 'hidden' || style.display === 'none')) return false;
+return true;
+}
+function disabled(el) {
+if (!el) return true;
+if (el.disabled) return true;
+if (el.getAttribute && (el.getAttribute('aria-disabled') === 'true' ||
+el.getAttribute('disabled') !== null)) return true;
+var cls = classOf(el);
+if (/(^|[\s_-])(disabled|off|unavailable|is-end|no-more)([\s_-]|$)/i.test(cls)) return true;
+var style = window.getComputedStyle \? window.getComputedStyle(el) : null;
+if (style && (style.pointerEvents === 'none' || style.opacity === '0')) return true;
+return false;
+}
+function inBadSlot(el) {
+var cur = el;
+for (var d = 0; d < 5 && cur && cur.nodeType === 1; d++, cur = cur.parentElement) {
+var sig = classOf(cur) + ' ' + (cur.id || '');
+if (badSlotRe.test(sig)) return true;
+}
+return false;
+}
+function click(el) {
+try { if (el.scrollIntoView) el.scrollIntoView({ block: 'center', inline: 'center' }); } catch (e) {}
+try {
+el.click();
+} catch (e) {
+try {
+el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+} catch (e2) {}
+}
+}
+function labelOf(el) {
+var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+if (text.length > 24) text = text.slice(0, 24);
+return text;
+}
+function pageFromUrl() {
+try {
+var u = new URL(location.href);
+var keys = ['page', 'p', 'pg', 'paged', 'pageno', 'pagenum', 'pageNo', 'pageNum',
+'page_num', 'pageindex', 'pageIndex', 'pagenumber', 'pageNumber'];
+for (var i = 0; i < keys.length; i++) {
+var raw = u.searchParams.get(keys[i]);
+if (raw == null) continue;
+var n = parseInt(raw, 10);
+if (!isNaN(n) && n > 0) return n;
+}
+// 路径式翻页：/page/3/、/list/2.html、/index_2.html。
+// 只认带 page/list/category 等页段，避免把 /video/123 的文章 id 当页码。
+var m = u.pathname.match(/(\?:^|\/)(\?:page|p|pg|list|category|cat|index|vod|vodtype|news)[-_]\?\/\?(\d{1,5})(\?:\.[a-z0-9]+)\?\/\?$/i);
+if (m) {
+var p = parseInt(m[1], 10);
+if (!isNaN(p) && p > 0) return p;
+}
+} catch (e) {}
+return 0;
+}
+function numberText(el) {
+var t = (el.textContent || '').replace(/\s+/g, '').trim();
+if (!/^\d{1,5}$/.test(t)) return 0;
+return parseInt(t, 10);
+}
+function pageBox(el) {
+var cur = el;
+for (var d = 0; d < 5 && cur && cur.nodeType === 1; d++, cur = cur.parentElement) {
+if (cur === document.body || cur === document.documentElement) return null;
+var sig = classOf(cur) + ' ' + (cur.id || '') + ' ' +
+(cur.getAttribute \? (cur.getAttribute('aria-label') || '') : '');
+if (/(pagination|pager|page[-_]\?nav|pagenavi|page[-_]\?numbers|paging|pagebar|page[-_]\?bar|wp-pagenavi|(^|[\s_-])(pages\?|pagelist|page[-_]\?list)([\s_-]|$))/i.test(sig)) {
+return cur;
+}
+}
+return null;
+}
+function isCurrentPage(el) {
+var cur = el;
+for (var d = 0; d < 3 && cur && cur.nodeType === 1; d++, cur = cur.parentElement) {
+if (cur.getAttribute && String(cur.getAttribute('aria-current') || '').toLowerCase() === 'page') return true;
+if (/(^|[\s_-])(current|active|selected|on)([\s_-]|$)/i.test(classOf(cur))) return true;
+}
+return false;
+}
+function clickableFor(el) {
+if (!el) return null;
+if (el.querySelector) {
+var inner = el.querySelector('a[href],button,[role="button"]');
+if (inner && !disabled(inner) && visible(inner)) return inner;
+}
+var cur = el;
+for (var d = 0; d < 3 && cur && cur.nodeType === 1; d++, cur = cur.parentElement) {
+var tag = (cur.tagName || '').toLowerCase();
+if (tag === 'a' || tag === 'button' || cur.getAttribute('role') === 'button') return cur;
+}
+return el;
+}
+/// 纯数字翻页（1 2 3 … 1001）：找出当前页，点下一页。
+function scanNumericPages() {
+var nodes = document.querySelectorAll('a,button,li,span');
+var groups = [];
+for (var i = 0; i < nodes.length && i < 4000; i++) {
+var el = nodes[i];
+var n = numberText(el);
+if (!n) continue;
+if (!visible(el) || disabled(el) || inBadSlot(el)) continue;
+var box = pageBox(el);
+if (!box) continue;
+var group = null;
+for (var g = 0; g < groups.length; g++) {
+if (groups[g].box === box) { group = groups[g]; break; }
+}
+if (!group) {
+group = { box: box, nodes: [] };
+groups.push(group);
+}
+group.nodes.push({ n: n, el: el, current: isCurrentPage(el) });
+}
+var urlPage = pageFromUrl();
+for (var k = 0; k < groups.length; k++) {
+var group2 = groups[k];
+if (group2.nodes.length < 2) continue;
+var current = 0;
+var maxN = 0;
+for (var q = 0; q < group2.nodes.length; q++) {
+var item = group2.nodes[q];
+if (item.n > maxN) maxN = item.n;
+if (item.current) current = item.n;
+}
+if (!current) current = urlPage;
+// 路径里的数字可能只是文章 id，不一定是页码。
+if (current > maxN) current = 0;
+var effective = current > 0 \? current : 1;
+var target = null;
+var best = null;
+for (var r = 0; r < group2.nodes.length; r++) {
+var cand = group2.nodes[r];
+if (cand.n <= effective) continue;
+if (cand.n === effective + 1) { target = cand; break; }
+if (!best || cand.n < best.n) best = cand;
+}
+if (!target) target = best && best.n <= effective + 3 \? best : null;
+if (!target) continue;
+var clickEl = clickableFor(target.el);
+if (!clickEl || disabled(clickEl)) continue;
+click(clickEl);
+return { ok: true, via: 'page-number', text: String(target.n) };
+}
+return null;
+}
+function tryEl(el, via) {
+if (!el || disabled(el) || !visible(el)) return null;
+if (inBadSlot(el)) return null;
+var text = labelOf(el);
+if (!text && el.getAttribute) {
+text = el.getAttribute('aria-label') || el.getAttribute('title') || '';
+}
+var lower = String(text).toLowerCase();
+if (noMoreRe.test(text)) return null;
+var rel = el.getAttribute \? (el.getAttribute('rel') || '') : '';
+var isNext = nextTextRe.test(lower) || /(^|\s)next(\s|$)/i.test(rel);
+var isMore = moreTextRe.test(lower);
+var isBareMore = !isMore && bareMoreRe.test(lower);
+// 只有「More」两个字时，要求类名也像加载按钮，
+// 否则容易点到底部导航 / 页脚里的同名链接。
+if (isBareMore && !classHintRe.test(classOf(el) + ' ' + (el.id || ''))) return null;
+isMore = isMore || isBareMore;
+if (!isNext && !isMore) {
+if (!classHintRe.test(classOf(el) + ' ' + (el.id || ''))) return null;
+var tag = (el.tagName || '').toLowerCase();
+if (tag !== 'a' && tag !== 'button' && !el.getAttribute('role')) return null;
+}
+// 页面顶部的「查看更多」多半是导航/推荐位，不是分页按钮。
+var rect = el.getBoundingClientRect();
+var vh = window.innerHeight || 800;
+if (rect.top < vh * 0.25 && !isNext && !/(^|\s)next(\s|$)/i.test(rel)) return null;
+click(el);
+return { ok: true, via: via, text: text };
+}
+
+// 1) 标准翻页 / 常见按钮类名
+var exact = document.querySelectorAll(
+'a[rel~="next"], link[rel~="next"], .next, .next-page, .nextPage, .pagination-next, .page-next, ' +
+'[class*="load-more"], [class*="loadmore"], [class*="load_more"], [id*="load-more"], [id*="loadmore"], ' +
+'[class*="view-more"], [class*="show-more"], [class*="btn-more"], [class*="more-btn"]'
+);
+for (var i = 0; i < exact.length && i < 40; i++) {
+var hit = tryEl(exact[i], 'selector');
+if (hit) return hit;
+}
+
+// 2) 文案匹配：取最近的可点击祖先，避免点到包住整排按钮的容器。
+var nodes = document.querySelectorAll('a,button,[role="button"],li,span,div,p,strong,em');
+for (var j = 0; j < nodes.length && j < 2500; j++) {
+var el = nodes[j];
+var raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
+if (!raw || raw.length > 12) continue;
+var lower = raw.toLowerCase();
+if (noMoreRe.test(raw)) continue;
+if (!nextTextRe.test(lower) && !moreTextRe.test(lower) &&
+!bareMoreRe.test(lower)) continue;
+var target = el;
+for (var d = 0; d < 3 && target.parentElement; d++) {
+var tag = (target.tagName || '').toLowerCase();
+if (tag === 'a' || tag === 'button' || target.getAttribute('role') === 'button') break;
+var parent = target.parentElement;
+var parentText = (parent.textContent || '').replace(/\s+/g, ' ').trim();
+if (parentText.length > 24) break;
+target = parent;
+}
+var hit2 = tryEl(target, 'text');
+if (hit2) return hit2;
+}
+
+// 3) 只有数字页码（1 2 3 … 1001），没有「下一页」文案。
+var numeric = scanNumericPages();
+if (numeric) return numeric;
+
+return { ok: false };
+} catch (e) {
+return { ok: false, error: String(e) };
+}
+})();

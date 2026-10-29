@@ -1,0 +1,61 @@
+(function () {
+var clicked = 0;
+try {
+var videos = document.querySelectorAll('video');
+for (var i = 0; i < videos.length; i++) {
+var v = videos[i];
+try {
+v.muted = true;
+var p = v.play();
+if (p && p.catch) p.catch(function () {});
+clicked++;
+} catch (e) {}
+}
+} catch (e) {}
+
+try {
+// 只点「像播放器」的东西。带 http 链接的 <a> 会把页面整体带走，
+// 一旦它指向的是推荐位里的另一部作品，后面嗅到的流、读到的结构
+// 就都不是用户点的那一部了。
+var playHrefRe = /(play|vod|tp|ip|html5|iframe|player|m3u8|\.mp4)/i;
+var slotRe = /(recommend|related|top|rank|hot|slide|guess|friend|footer|side)/i;
+function inAdSlot(el) {
+var node = el;
+for (var d = 0; d < 4 && node; d++) {
+var hint = ((node.className || '') + ' ' + (node.id || '')).toString();
+if (slotRe.test(hint)) return true;
+node = node.parentElement;
+}
+return false;
+}
+function safeToClick(el) {
+if (inAdSlot(el)) return false;
+var tag = el.tagName;
+if (tag === 'A') {
+var href = el.getAttribute('href') || '';
+if (/^https\?:/i.test(href)) {
+if (!playHrefRe.test(href)) return false;
+try {
+if (new URL(href, location.href).host !== location.host) return false;
+} catch (e) { return false; }
+}
+}
+return true;
+}
+
+var targets = document.querySelectorAll(
+'[class*="play" i],[id*="play" i],[data-action*="play" i],' +
+'[aria-label*="播放"],[title*="播放"],[aria-label*="Play"],[title*="Play"]'
+);
+var taps = 0;
+for (var j = 0; j < targets.length && taps < 4; j++) {
+var el = targets[j];
+var r = el.getBoundingClientRect \? el.getBoundingClientRect() : null;
+if (!r || r.width < 4 || r.height < 4) continue;
+if (!safeToClick(el)) continue;
+try { el.click(); taps++; clicked++; } catch (e) {}
+}
+} catch (e) {}
+
+return clicked;
+})();

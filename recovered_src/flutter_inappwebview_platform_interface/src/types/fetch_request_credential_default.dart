@@ -1,0 +1,137 @@
+// ------------------------------------------------------------------
+// pseudo-Dart reconstructed from AOT: package:flutter_inappwebview_platform_interface/src/types/fetch_request_credential_default.dart
+// Normalized from a blutter aarch64 listing. Registers (rN), stack slots
+// (loc_XX) and labels (L_xxxxxx) are preserved so data/control flow stay
+// traceable. This is NOT the original Dart source: local types are inferred
+// only from usage and fields appear as offsets (field_7, field_b, ...).
+// ------------------------------------------------------------------
+
+// ---- top-level members (class id 1049148) ----
+
+}
+
+// class id 936, instance size 0x10, first field at 0xc
+class FetchRequestCredentialDefault extends FetchRequestCredential {
+
+  Map<String, dynamic> toJson(FetchRequestCredentialDefault) {
+    // calls: FetchRequestCredentialDefault.toMap
+    L_3d99ec:
+    r1 = incoming_arg(16)
+    r0 = FetchRequestCredentialDefault.toMap()
+    return r0
+    L_3d9a00:
+    r0 = StackOverflowSharedWithoutFPURegs()
+    goto L_3d99ec
+  }
+
+  static _ fromMap(/* No info */) {
+    // strings: "value", "type"
+    loc_8 = r1
+    L_3da6e8:
+    r0 = classId(r3)
+    r1 = r3
+    r2 = "value"
+    r0 = GDT[cid_x0 + 0x3e1]()
+    r3 = r0
+    r2 = null
+    r1 = null
+    loc_10 = r3
+    r4 = 60
+    branchIfSmi(r0, 0x3da724)
+    r4 = classId(r0)
+    L_3da724:
+    r4 = r4 - 4
+    if (r4 <= 1) goto L_3da740
+    r8 = String?
+    r3 = null
+    r0 = String?()
+    L_3da740:
+    r0 = FetchRequestCredentialDefault()
+    r3 = r0
+    r0 = loc_10
+    loc_18 = r3
+    r3.field_b = r0
+    r1 = loc_8
+    r0 = classId(r1)
+    r2 = "type"
+    r0 = GDT[cid_x0 + 0x3e1]()
+    r3 = r0
+    r2 = null
+    r1 = null
+    loc_8 = r3
+    r4 = 60
+    branchIfSmi(r0, 0x3da790)
+    r4 = classId(r0)
+    L_3da790:
+    r4 = r4 - 4
+    if (r4 <= 1) goto L_3da7ac
+    r8 = String?
+    r3 = null
+    r0 = String?()
+    L_3da7ac:
+    r0 = loc_8
+    r1 = loc_18
+    r1.field_7 = r0
+    if (cc.eq) goto L_3da7d0
+    vmStub(WriteBarrierWrappersStub)
+    L_3da7d0:
+    r0 = r1
+    return r0
+    L_3da7e0:
+    r0 = StackOverflowSharedWithoutFPURegs()
+    goto L_3da6e8
+  }
+
+  _ toString(/* No info */) {
+    // calls: _StringBase._interpolate
+    // strings: "FetchRequestCredentialDefault{type: ", ", value: ", "}"
+    L_75a0b4:
+    r1 = null
+    r2 = 10
+    r0 = AllocateArray()
+    r16 = "FetchRequestCredentialDefault{type: "
+    r0.field_f = r16
+    r1 = incoming_arg(16)
+    r2 = r1.field_7
+    r0.field_13 = r2
+    r16 = ", value: "
+    r0[0] = r16
+    r2 = r1.field_b
+    r0.field_1b = r2
+    r16 = "}"
+    r0.field_1f = r16
+    r0 = _StringBase._interpolate()
+    return r0
+    L_75a114:
+    r0 = StackOverflowSharedWithoutFPURegs()
+    goto L_75a0b4
+  }
+
+  Map<String, dynamic> toMap(FetchRequestCredentialDefault) {
+    // calls: Map.Map._fromLiteral
+    // strings: "type", "value"
+    loc_8 = r1
+    L_88b17c:
+    r1 = null
+    r2 = 8
+    r0 = AllocateArray()
+    r16 = "type"
+    r0.field_f = r16
+    r1 = loc_8
+    r2 = r1.field_7
+    r0.field_13 = r2
+    r16 = "value"
+    r0[0] = r16
+    r2 = r1.field_b
+    r0.field_1b = r2
+    r16 = TypeArguments<String, dynamic>
+    r4 = [2, 1, 1, 1, null]
+    r0 = Map.Map._fromLiteral()
+    return r0
+    L_88b1d0:
+    r0 = StackOverflowSharedWithoutFPURegs()
+    goto L_88b17c
+  }
+
+}
+

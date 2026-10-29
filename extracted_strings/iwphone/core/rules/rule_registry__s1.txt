@@ -1,0 +1,22 @@
+[
+{
+"id": "mgnacg",
+"name": "橘子动漫",
+"hosts": ["mgnacg.com", "mknacg.top"],
+"version": 1,
+"note": "MacCMS + Streamlab 主题：卡片 .public-list-box，封面走 data-src 懒加载",
+"list": {
+"item": [".public-list-box", ".public-list-div"],
+"title": ["a.public-list-exp@title", "img@alt"],
+"link": ["a.public-list-exp@href", "a@href"],
+"cover": ["img@data-src", "img@src"]
+},
+"search": {
+"url": "/search/-------------.html\?wd={keyword}",
+"item": [".public-list-box", ".public-list-div"],
+"title": ["a.public-list-exp@title", "img@alt"],
+"link": ["a.public-list-exp@href", "a@href"],
+"cover": ["img@data-src", "img@src"]
+}
+}
+]

@@ -1,0 +1,15 @@
+(function () {
+try {
+var links = document.querySelectorAll('a[href]');
+for (var i = 0; i < links.length && i < 800; i++) {
+var href = links[i].href || '';
+if (!/^https\?:/i.test(href)) continue;
+if (!/search|sousuo/i.test(href)) continue;
+if (href.split('#')[0] === location.href.split('#')[0]) continue;
+return { ok: true, url: href };
+}
+return { ok: false };
+} catch (e) {
+return { ok: false };
+}
+})();

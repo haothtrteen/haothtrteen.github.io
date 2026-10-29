@@ -1,0 +1,101 @@
+(function () {
+try {
+// 播放页的 __INITIAL_STATE__ 里有 bvid / cid，失败时带回去方便定位
+// 是哪一集拿不到 DASH（也供后续走接口兜底）。
+function initState() {
+try { return window.__INITIAL_STATE__ || null; } catch (e) { return null; }
+}
+function initBvid() {
+var s = initState();
+if (s) {
+if (s.bvid) return String(s.bvid);
+if (s.videoData && s.videoData.bvid) return String(s.videoData.bvid);
+}
+var m = location.pathname.match(/\/video\/(BV[0-9A-Za-z]{10})/);
+return m \? m[1] : '';
+}
+function initCid() {
+var s = initState();
+if (s) {
+var c = s.cid || (s.videoData && s.videoData.cid);
+var n = parseInt(c, 10);
+if (n > 0) return n;
+}
+return 0;
+}
+var pi = window.__playinfo__;
+if (!pi) return { ok: false, reason: 'no-playinfo', bvid: initBvid(), cid: initCid() };
+// 普通视频在 pi.data，番剧 / PGC 在 pi.result，两者结构一致。
+var candidates = [pi.data, pi.result, pi];
+var data = null;
+for (var k = 0; k < candidates.length; k++) {
+var node = candidates[k];
+if (node && node.dash && node.dash.video && node.dash.video.length) {
+data = node;
+break;
+}
+}
+if (!data) data = pi.data || pi.result || pi;
+var dash = data.dash;
+if (!dash || !dash.video || !dash.video.length) {
+return { ok: false, reason: 'no-dash', bvid: initBvid(), cid: initCid() };
+}
+function abs(u) {
+try { return new URL(String(u || ''), location.href).href; } catch (e) { return ''; }
+}
+function firstUrl(v) {
+var u = abs(v.baseUrl || v.base_url || '');
+if (u) return u;
+var backups = v.backupUrl || v.backup_url || [];
+for (var i = 0; i < backups.length; i++) {
+u = abs(backups[i]);
+if (u) return u;
+}
+return '';
+}
+function num(v) {
+var n = parseFloat(v);
+return isNaN(n) \? 0 : n;
+}
+var video = [];
+for (var i = 0; i < dash.video.length; i++) {
+var v = dash.video[i] || {};
+var u = firstUrl(v);
+if (!u) continue;
+video.push({
+q: v.id,
+u: u,
+w: num(v.width),
+h: num(v.height),
+bw: num(v.bandwidth),
+fr: num(v.frameRate || v.frame_rate),
+codecs: String(v.codecs || '')
+});
+}
+var audio = [];
+var list = dash.audio || [];
+for (var j = 0; j < list.length; j++) {
+var a = list[j] || {};
+var au = firstUrl(a);
+if (!au) continue;
+audio.push({
+id: a.id,
+u: au,
+bw: num(a.bandwidth),
+codecs: String(a.codecs || '')
+});
+}
+return {
+ok: true,
+quality: data.quality,
+acceptQuality: data.accept_quality || [],
+acceptDescription: data.accept_description || [],
+bvid: initBvid(),
+cid: initCid(),
+video: video,
+audio: audio
+};
+} catch (e) {
+return { ok: false, reason: String(e) };
+}
+})();

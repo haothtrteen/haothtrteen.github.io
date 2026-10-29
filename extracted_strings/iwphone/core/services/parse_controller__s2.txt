@@ -1,0 +1,146 @@
+(function () {
+if (window.__jumuManifests) return;
+var list = [];
+var seen = {};
+var total = 0;
+var MAX_ENTRY = 600000;
+var MAX_TOTAL = 3000000;
+var MAX_COUNT = 24;
+window.__jumuManifests = list;
+
+function isManifestUrl(u) {
+return /\.(m3u8|mpd)(\\?|#|$)/i.test(String(u || ''));
+}
+
+// 顺带记录媒体分片的真实大小（Content-Range 的总字节数）。
+// 切清晰度时页面会同时请求视频轨和音频轨，大小能可靠地把两者分开。
+window.__jumuMediaSizes = window.__jumuMediaSizes || {};
+var sizeCount = 0;
+function noteSize(u, cr, cl) {
+try {
+var url = String(u || '');
+if (!/\.(m4s|mp4|ts|m4a|aac)(\\?|#|$)/i.test(url)) return;
+var total = 0;
+var m = String(cr || '').match(/\/(\d+)\s*$/);
+if (m) total = parseInt(m[1], 10) || 0;
+if (!total) total = parseInt(cl || '0', 10) || 0;
+if (!total || total < 1024) return;
+if (!window.__jumuMediaSizes[url] && sizeCount > 80) return;
+if (!window.__jumuMediaSizes[url]) sizeCount++;
+window.__jumuMediaSizes[url] = total;
+} catch (e) {}
+}
+
+function looksJson(ct) {
+return /json|javascript|text\/plain/i.test(String(ct || ''));
+}
+
+function jsonWorthReading(t) {
+if (!t || t.length > 400000) return false;
+return /"dash"\s*:|"baseUrl"\s*:|"base_url"\s*:|"qualities"\s*:|"clarity"\s*:|"definition"\s*:|"(width|height|bandwidth|bitrate)"\s*:|\.m3u8/i.test(t);
+}
+
+function push(u, t) {
+try {
+if (!t) return;
+var url = String(u || '');
+if (!/^https\?:/i.test(url)) return;
+if (seen[url]) return;
+if (t.length > MAX_ENTRY) t = t.slice(0, MAX_ENTRY);
+if (total + t.length > MAX_TOTAL) return;
+seen[url] = 1;
+total += t.length;
+list.push({ u: url, t: t });
+while (list.length > MAX_COUNT) {
+var dropped = list.shift();
+total -= (dropped && dropped.t \? dropped.t.length : 0);
+}
+} catch (e) {}
+}
+
+function consider(u, ct, t) {
+if (!t) return;
+var head = t.slice(0, 8);
+if (t.indexOf('#EXTM3U') === 0 || t.indexOf('<MPD') >= 0) {
+push(u, t);
+return;
+}
+if (looksJson(ct) || head.indexOf('{') === 0 || head.indexOf('[') === 0) {
+if (jsonWorthReading(t)) push(u, t);
+}
+}
+
+// 1) fetch
+try {
+var origFetch = window.fetch;
+if (origFetch) {
+window.fetch = function () {
+var args = arguments;
+var reqUrl = '';
+try {
+reqUrl = typeof args[0] === 'string' \? args[0] : ((args[0] && args[0].url) || '');
+} catch (e) {}
+return origFetch.apply(this, args).then(function (res) {
+try {
+var ct = (res.headers && res.headers.get('content-type')) || '';
+var finalUrl = res.url || reqUrl;
+noteSize(
+finalUrl,
+(res.headers && res.headers.get('content-range')) || '',
+(res.headers && res.headers.get('content-length')) || ''
+);
+if (isManifestUrl(finalUrl) || isManifestUrl(reqUrl) ||
+looksJson(ct)) {
+res.clone().text().then(function (t) {
+consider(finalUrl, ct, t);
+}).catch(function () {});
+}
+} catch (e) {}
+return res;
+});
+};
+}
+} catch (e) {}
+
+// 2) XHR
+try {
+var XHR = window.XMLHttpRequest;
+if (XHR) {
+var origOpen = XHR.prototype.open;
+XHR.prototype.open = function (m, u) {
+this.__jumuUrl = u;
+return origOpen.apply(this, arguments);
+};
+var origSend = XHR.prototype.send;
+XHR.prototype.send = function () {
+var self = this;
+this.addEventListener('load', function () {
+try {
+var u = self.responseURL || self.__jumuUrl || '';
+var ct = '';
+try { ct = self.getResponseHeader('content-type') || ''; } catch (e) {}
+try {
+noteSize(
+u,
+self.getResponseHeader('content-range') || '',
+self.getResponseHeader('content-length') || ''
+);
+} catch (e) {}
+var t = '';
+if (!self.responseType || self.responseType === 'text') {
+t = self.responseText || '';
+} else if (self.responseType === 'json' && self.response) {
+t = JSON.stringify(self.response);
+}
+if (!t) return;
+if (isManifestUrl(u) || looksJson(ct) ||
+t.indexOf('#EXTM3U') === 0 || t.indexOf('<MPD') >= 0) {
+consider(u, ct, t);
+}
+} catch (e) {}
+});
+return origSend.apply(this, arguments);
+};
+}
+} catch (e) {}
+})();

@@ -1,0 +1,39 @@
+;
+var fieldRe = /^(wd|kw|keyword|keywords|searchword|searchkey|key|word|k|q|query|name|s)$/i;
+var inputs = document.querySelectorAll('input');
+var input = null;
+for (var i = 0; i < inputs.length && i < 200; i++) {
+var el = inputs[i];
+var type = (el.getAttribute('type') || 'text').toLowerCase();
+if (type !== 'text' && type !== 'search') continue;
+var name = el.getAttribute('name') || el.getAttribute('id') || '';
+if (!fieldRe.test(name)) continue;
+input = el;
+break;
+}
+if (!input) return { ok: false, reason: 'no-input' };
+
+input.focus();
+input.value = kw;
+try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
+try { input.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+
+var form = input.form || (input.closest \? input.closest('form') : null);
+if (!form) return { ok: false, reason: 'no-form' };
+// 优先走站点自己的提交按钮：它可能挂着「把关键词拼成路径」的逻辑。
+var btn = form.querySelector('button[type="submit"],input[type="submit"],button');
+if (btn) {
+btn.click();
+return { ok: true, via: 'button' };
+}
+try {
+if (form.requestSubmit) { form.requestSubmit(); return { ok: true, via: 'requestSubmit' }; }
+form.submit();
+return { ok: true, via: 'submit' };
+} catch (e) {
+return { ok: false, reason: 'submit-failed' };
+}
+} catch (e) {
+return { ok: false, reason: String(e) };
+}
+})();

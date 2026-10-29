@@ -1,0 +1,111 @@
+(function () {
+if (window.__jumuQualityOpen) return;
+var LABEL = /^(自动|原画|超清|高清|蓝光|标清|流畅|杜比|HDR|\d{3,4}\s*[PpKk])/;
+
+function laidOut() {
+return (window.innerWidth || 0) > 10 && (window.innerHeight || 0) > 10;
+}
+
+function visible(el) {
+try {
+var style = window.getComputedStyle(el);
+if (!style || style.display === 'none' || style.visibility === 'hidden') {
+return false;
+}
+if (!laidOut()) return true;
+var r = el.getBoundingClientRect();
+return r.width > 4 && r.height > 4;
+} catch (e) {
+return false;
+}
+}
+
+function qualityish(el) {
+var s = String(el.className || '') + ' ' + String(el.id || '');
+return /quality|clarity|definition|resolution|sharp|画质|清晰/i.test(s);
+}
+
+function firstLine(text) {
+return String(text || '').split('\
+')[0].replace(/\s+/g, ' ').trim();
+}
+
+window.__jumuQualityOpen = function () {
+var nodes = document.querySelectorAll('div,button,a,span,li');
+for (var i = 0; i < nodes.length; i++) {
+var el = nodes[i];
+if (!qualityish(el) || !visible(el)) continue;
+var text = (el.innerText || '').trim();
+if (text.length > 30) continue;
+try {
+el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+el.click();
+return true;
+} catch (e) {}
+}
+return false;
+};
+
+function collect() {
+var out = [];
+var seen = {};
+var nodes = document.querySelectorAll('div,li,span,a,button');
+for (var i = 0; i < nodes.length; i++) {
+var el = nodes[i];
+if (!visible(el) || !qualityish(el)) continue;
+var label = firstLine(el.innerText);
+if (!label || label.length > 16 || !LABEL.test(label)) continue;
+if (/^自动/.test(label)) continue;
+// 只要叶子项：父元素的文字是多个档位拼起来的，跳过。
+if (el.querySelector && el.querySelector('[class*="item"],[class*="menu"]')) {
+var kids = el.querySelectorAll('[class*="item"]');
+if (kids.length > 1) continue;
+}
+if (seen[label]) continue;
+seen[label] = 1;
+el.setAttribute('data-jumu-q', label);
+out.push({
+label: label,
+active: /active|selected|checked|current/i.test(String(el.className || ''))
+});
+}
+return out;
+}
+
+window.__jumuQualityItems = function () {
+var items = collect();
+if (items.length < 2) {
+// 菜单没展开时先点一下控件，再收一次。
+window.__jumuQualityOpen();
+items = collect();
+}
+return items;
+};
+
+window.__jumuQualityClick = function (label) {
+function find() {
+var el = document.querySelector('[data-jumu-q="' + label + '"]');
+if (el) return el;
+var nodes = document.querySelectorAll('div,li,span,a,button');
+for (var i = 0; i < nodes.length; i++) {
+if (!visible(nodes[i])) continue;
+if (firstLine(nodes[i].innerText) === label) return nodes[i];
+}
+return null;
+}
+var el = find();
+if (!el) {
+window.__jumuQualityOpen();
+el = find();
+}
+if (!el) return false;
+try {
+el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+el.click();
+return true;
+} catch (e) {
+return false;
+}
+};
+})();

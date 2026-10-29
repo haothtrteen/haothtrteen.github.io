@@ -1,0 +1,153 @@
+(function () {
+try {
+var cfg = __SCRIPT_CONFIG__;
+function norm(s) {
+return String(s == null \? '' : s).replace(/\s+/g, ' ').trim();
+}
+function abs(u, base) {
+u = norm(u);
+if (!u || u.charAt(0) === '#' || u.indexOf('javascript:') === 0 || u.indexOf('data:') === 0) return '';
+try { return new URL(u, base || location.href).href; } catch (e) { return ''; }
+}
+var bridge = window.flutter_inappwebview && window.flutter_inappwebview.callHandler
+\? window.flutter_inappwebview.callHandler.bind(window.flutter_inappwebview)
+: null;
+function call(method, url, headers, body) {
+if (!bridge) return Promise.reject(new Error('当前环境没有原生请求桥'));
+return bridge('iwphoneHttp', window.__iwphoneRunId || '', method, url, headers || {}, body == null \? '' : body)
+.then(function (res) {
+if (!res || res.status === 0) {
+throw new Error((res && res.error) || '请求失败');
+}
+return res;
+});
+}
+var http = {
+get: function (url, headers) { return call('GET', url, headers, null); },
+post: function (url, body, headers) { return call('POST', url, body, headers); },
+head: function (url, headers) { return call('HEAD', url, headers, null); }
+};
+var ctx = {
+kind: cfg.kind,
+keyword: cfg.keyword,
+url: location.href,
+limit: cfg.limit
+};
+
+function normalizeDetail(res) {
+res = res || {};
+var eps = [];
+var rawEps = Array.isArray(res.episodes) \? res.episodes
+: (Array.isArray(res.items) \? res.items : []);
+for (var i = 0; i < rawEps.length && eps.length < 500; i++) {
+var e = rawEps[i];
+if (!e) continue;
+var u = abs(typeof e === 'string' \? e : (e.u || e.url || e.href || ''));
+if (!u) continue;
+eps.push({
+t: norm(typeof e === 'string' \? '' : (e.t || e.title || e.name || '')),
+u: u
+});
+}
+var lines = [];
+var rawLines = Array.isArray(res.lines) \? res.lines : [];
+for (var j = 0; j < rawLines.length && lines.length < 12; j++) {
+var x = rawLines[j];
+if (!x) continue;
+lines.push({
+t: norm(typeof x === 'string' \? x : (x.t || x.label || x.name || '')),
+on: !!(x && (x.on || x.active))
+});
+}
+return {
+ok: true,
+url: location.href,
+title: norm(res.title || document.title),
+cover: abs(res.cover || ''),
+desc: norm(res.desc || res.description || ''),
+episodes: eps,
+lines: lines,
+hasPlayer: res.hasPlayer === true
+};
+}
+function normalizePlay(res) {
+var raw = [];
+if (typeof res === 'string') raw = [res];
+else if (Array.isArray(res)) raw = res;
+else if (res && Array.isArray(res.urls)) raw = res.urls;
+else if (res && Array.isArray(res.items)) raw = res.items;
+else if (res && (res.url || res.u)) raw = [res];
+var urls = [];
+for (var i = 0; i < raw.length && urls.length < 20; i++) {
+var x = raw[i];
+var u = abs(typeof x === 'string' \? x : ((x && (x.url || x.u)) || ''));
+if (!u || urls.indexOf(u) >= 0) continue;
+var headers = x && typeof x === 'object' && x.headers && typeof x.headers === 'object' \? x.headers : null;
+urls.push(headers \? { u: u, h: headers } : { u: u, h: null });
+}
+return {
+ok: true,
+url: location.href,
+title: norm(res && res.title \? res.title : document.title),
+urls: urls
+};
+}
+function normalize(res) {
+if (res && res.ok === false) {
+return { ok: false, error: norm(res.error) || '脚本返回失败', items: [] };
+}
+if (cfg.kind === 'detail') return normalizeDetail(res);
+if (cfg.kind === 'play') return normalizePlay(res);
+var list = [];
+if (Array.isArray(res)) list = res;
+else if (res && Array.isArray(res.items)) list = res.items;
+var items = [];
+for (var i = 0; i < list.length && items.length < cfg.limit; i++) {
+var raw = list[i];
+if (!raw) continue;
+var url = abs(raw.url || raw.u || raw.href || raw.link || '');
+if (!url) continue;
+items.push({
+t: norm(raw.title || raw.t || raw.name || ''),
+u: url,
+c: abs(raw.cover || raw.c || raw.pic || raw.thumbnail || ''),
+a: Number(raw.aspect || raw.a || 0) || 0
+});
+}
+return {
+ok: true,
+url: location.href,
+title: norm(res && res.title \? res.title : document.title),
+items: items
+};
+}
+
+function finish(res) {
+window.__iwphoneRuleResult = JSON.stringify(normalize(res));
+}
+function fail(e) {
+window.__iwphoneRuleResult = JSON.stringify({
+ok: false,
+error: '脚本执行失败：' + (e && e.message \? e.message : e),
+items: []
+});
+}
+
+var fn;
+if (/^\s*(async\s+)\?function\b/.test(cfg.source)) {
+// 允许直接贴一个函数字面量。
+fn = (0, eval)('(' + cfg.source + ')');
+fn = fn.call(window, ctx, http, abs, norm);
+} else {
+var body = new Function('ctx', 'http', 'abs', 'norm', cfg.source);
+fn = body.call(window, ctx, http, abs, norm);
+}
+if (fn && typeof fn.then === 'function') {
+fn.then(finish, fail);
+return '';
+}
+return JSON.stringify(normalize(fn));
+} catch (e) {
+return JSON.stringify({ ok: false, error: '脚本执行失败：' + e, items: [] });
+}
+})()

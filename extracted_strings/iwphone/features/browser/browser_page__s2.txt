@@ -1,0 +1,65 @@
+(function () {
+try {
+var b = document.body;
+if (!b) {
+return {
+ok: false, reason: 'no-body', url: location.href,
+title: document.title || '', ua: navigator.userAgent || ''
+};
+}
+var text = (b.innerText || b.textContent || '').trim();
+var media = document.querySelectorAll(
+'video,canvas,iframe,img,picture,svg'
+).length;
+var ua = navigator.userAgent || '';
+var m = ua.match(/Chrome\/([0-9.]+)/);
+var cs = window.getComputedStyle \? window.getComputedStyle(b) : null;
+var d = document.documentElement;
+var vv = window.visualViewport;
+var br = b.getBoundingClientRect \? b.getBoundingClientRect() : null;
+// 顶层元素里最大的那几个，用来判断页面到底有没有“实体内容”。
+var top = [];
+if (b.children) {
+for (var i = 0; i < b.children.length && i < 6; i++) {
+var el = b.children[i];
+var r = el.getBoundingClientRect \? el.getBoundingClientRect() : null;
+top.push({
+t: el.tagName,
+w: r \? Math.round(r.width) : 0,
+h: r \? Math.round(r.height) : 0,
+p: window.getComputedStyle \? window.getComputedStyle(el).position : ''
+});
+}
+}
+return {
+ok: true,
+url: location.href,
+title: document.title || '',
+ua: ua,
+chrome: m \? m[1] : '',
+readyState: document.readyState,
+textLen: text.length,
+media: media,
+children: b.children.length,
+htmlLen: (d && d.outerHTML || '').length,
+bodyBg: cs \? cs.backgroundColor : '',
+bodyH: b.scrollHeight || 0,
+viewW: window.innerWidth || 0,
+viewH: window.innerHeight || 0,
+clientW: d \? d.clientWidth : -1,
+clientH: d \? d.clientHeight : -1,
+scrollW: d \? d.scrollWidth : -1,
+vvW: vv \? Math.round(vv.width) : -1,
+vvH: vv \? Math.round(vv.height) : -1,
+vvScale: vv \? Math.round(vv.scale * 1000) / 1000 : -1,
+screenW: window.screen \? window.screen.width : -1,
+dpr: window.devicePixelRatio || 0,
+bodyRectW: br \? Math.round(br.width) : -1,
+bodyRectH: br \? Math.round(br.height) : -1,
+iwOwn: !!Object.getOwnPropertyDescriptor(window, 'innerWidth'),
+top: top
+};
+} catch (e) {
+return { ok: false, reason: String(e), url: location.href };
+}
+})();

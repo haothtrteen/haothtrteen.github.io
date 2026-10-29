@@ -1,0 +1,146 @@
+(function () {
+window.__jumuPi = { pending: true };
+function state() {
+try { return window.__INITIAL_STATE__ || null; } catch (e) { return null; }
+}
+function bvid() {
+var s = state();
+if (s) {
+if (s.bvid) return String(s.bvid);
+if (s.videoData && s.videoData.bvid) return String(s.videoData.bvid);
+}
+var m = location.pathname.match(/\/video\/(BV[0-9A-Za-z]{10})/);
+return m \? m[1] : '';
+}
+function cid() {
+var s = state();
+if (s) {
+var c = s.cid || (s.videoData && s.videoData.cid);
+var n = parseInt(c, 10);
+if (n > 0) return n;
+}
+return 0;
+}
+function map(d) {
+var dash = d && d.dash;
+if (!dash || !dash.video || !dash.video.length) return { ok: false, reason: 'no-dash' };
+function abs(u) {
+try { return new URL(String(u || ''), location.href).href; } catch (e) { return ''; }
+}
+function firstUrl(v) {
+var u = abs(v.baseUrl || v.base_url || '');
+if (u) return u;
+var backups = v.backupUrl || v.backup_url || [];
+for (var i = 0; i < backups.length; i++) {
+u = abs(backups[i]);
+if (u) return u;
+}
+return '';
+}
+function num(v) {
+var n = parseFloat(v);
+return isNaN(n) \? 0 : n;
+}
+var video = [];
+for (var i = 0; i < dash.video.length; i++) {
+var v = dash.video[i] || {};
+var u = firstUrl(v);
+if (!u) continue;
+video.push({ q: v.id, u: u, w: num(v.width), h: num(v.height), bw: num(v.bandwidth), fr: num(v.frameRate || v.frame_rate), codecs: String(v.codecs || '') });
+}
+var audio = [];
+var list = dash.audio || [];
+for (var j = 0; j < list.length; j++) {
+var a = list[j] || {};
+var au = firstUrl(a);
+if (!au) continue;
+audio.push({ id: a.id, u: au, bw: num(a.bandwidth), codecs: String(a.codecs || '') });
+}
+return {
+ok: true,
+quality: d.quality,
+acceptQuality: d.accept_quality || [],
+acceptDescription: d.accept_description || [],
+bvid: bvid(),
+cid: cid(),
+video: video,
+audio: audio
+};
+}
+// 从 HTML 里抠出内嵌的播放信息。只认结构，不认具体站点：
+// 大多是 `window.__playinfo__ = {...}`。
+function extractPlayinfo(html) {
+var marker = html.indexOf('__playinfo__');
+while (marker >= 0) {
+var eq = html.indexOf('=', marker);
+if (eq < 0) break;
+var start = html.indexOf('{', eq);
+if (start < 0) break;
+var depth = 0, inStr = false, esc = false, end = -1;
+for (var i = start; i < html.length; i++) {
+var ch = html.charAt(i);
+if (inStr) {
+if (esc) esc = false;
+else if (ch === '\\') esc = true;
+else if (ch === '"') inStr = false;
+continue;
+}
+if (ch === '"') { inStr = true; continue; }
+if (ch === '{') depth++;
+else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+}
+if (end > start) {
+try { return JSON.parse(html.slice(start, end + 1)); } catch (e) {}
+}
+marker = html.indexOf('__playinfo__', marker + 1);
+}
+return null;
+}
+function pageUrlDesktop() {
+try {
+if (location.host === 'www.bilibili.com') return location.href;
+return 'https://www.bilibili.com' + location.pathname + location.search;
+} catch (e) { return location.href; }
+}
+(async function () {
+try {
+// 1) 先读页面自己的 HTML：播放信息通常就内嵌在首屏里，
+//    不需要任何接口。桌面页/移动页的差异也在这里被抹平。
+try {
+var hr = await fetch(pageUrlDesktop(), { credentials: 'include' });
+if (hr && hr.ok) {
+var html = await hr.text();
+var pi = extractPlayinfo(html);
+if (pi) {
+var mapped = map(pi.data || pi.result || pi);
+if (mapped && mapped.ok) {
+window.__jumuPi = mapped;
+return;
+}
+}
+}
+} catch (e) {}
+// 2) 页面 HTML 里确实没有，才退到播放地址接口。
+var bv = bvid();
+var c = cid();
+if (bv && !c) {
+var pr = await fetch('https://api.bilibili.com/x/player/pagelist\?bvid=' + bv, { credentials: 'include' });
+var pj = await pr.json();
+if (pj && pj.code === 0 && pj.data && pj.data[0] && pj.data[0].cid) {
+c = parseInt(pj.data[0].cid, 10) || 0;
+}
+}
+if (!bv || !c) { window.__jumuPi = { ok: false, reason: 'no-ids' }; return; }
+var url = 'https://api.bilibili.com/x/player/playurl\?bvid=' + bv + '&cid=' + c + '&fnval=4048&fnver=0&fourk=1&qn=120';
+var resp = await fetch(url, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+var json = await resp.json();
+if (!json || json.code !== 0 || !json.data) {
+window.__jumuPi = { ok: false, reason: 'api-' + (json && json.code) + (json && json.message \? ' ' + json.message : '') };
+return;
+}
+window.__jumuPi = map(json.data);
+} catch (e) {
+window.__jumuPi = { ok: false, reason: String(e) };
+}
+})();
+})();

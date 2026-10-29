@@ -1,0 +1,14 @@
+(function () {
+try {
+var count = 0;
+var media = document.querySelectorAll('video,audio');
+for (var i = 0; i < media.length; i++) {
+var el = media[i];
+try { el.pause(); count++; } catch (e) {}
+try { el.muted = true; el.volume = 0; } catch (e) {}
+try { el.removeAttribute('src'); el.load(); } catch (e) {}
+}
+try { window.stop(); } catch (e) {}
+return count;
+} catch (e) { return 0; }
+})();

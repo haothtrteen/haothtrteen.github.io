@@ -1,0 +1,18 @@
+(function () {
+try {
+function mute(el) {
+try { el.muted = true; el.volume = 0; el.setAttribute('muted', ''); } catch (e) {}
+}
+document.addEventListener('play', function (e) {
+var t = e.target;
+if (t && (t.tagName === 'VIDEO' || t.tagName === 'AUDIO')) mute(t);
+}, true);
+var timer = setInterval(function () {
+try {
+var media = document.querySelectorAll('video,audio');
+for (var i = 0; i < media.length; i++) mute(media[i]);
+} catch (e) {}
+}, 700);
+setTimeout(function () { try { clearInterval(timer); } catch (e) {} }, 45000);
+} catch (e) {}
+})();

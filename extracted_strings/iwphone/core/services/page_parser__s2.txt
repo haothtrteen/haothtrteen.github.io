@@ -1,0 +1,72 @@
+;
+// 和解析端一致：忽略空白与末尾集数角标（「云端线路10」→「云端线路」）。
+// 「播放 I / 播放 1」的编号属于标签本身，不能去掉。
+function clean(v) {
+var text = String(v || '')
+.replace(/[-︀-️]/g, '')
+.replace(/^[^0-9A-Za-z一-龥]+/, '')
+.replace(/\s+/g, '')
+.trim();
+if (/^播放/.test(text)) return text;
+return text.replace(/[0-9０-９]{1,4}$/, '').trim();
+}
+function sig(el) {
+if (!el) return '';
+var cls = (el.className || '').toString().replace(/\s+/g, ' ').trim().split(' ')[0];
+return el.tagName + '.' + cls;
+}
+function groupKey(a) {
+var p = a.parentElement;
+return sig(p) + '|' + sig(p && p.parentElement);
+}
+var nodes = document.querySelectorAll('a,button,li,span,div');
+var groups = {};
+for (var i = 0; i < nodes.length && i < 900; i++) {
+var el = nodes[i];
+// 与解析端一致：标签内常带图标/角标子节点，只有嵌了链接/按钮的才算容器。
+if (el.children && el.children.length > 0 && el.querySelector('a,button')) continue;
+var text = clean(el.innerText || el.textContent);
+if (!text || text.length > 10) continue;
+var key = groupKey(el);
+if (!key) continue;
+if (!groups[key]) groups[key] = [];
+groups[key].push(el);
+}
+
+var best = null;
+for (var g in groups) {
+var list = groups[g];
+var hit = 0;
+for (var j = 0; j < list.length; j++) {
+if (clean(list[j].innerText || list[j].textContent) === want) hit++;
+}
+if (hit > 0 && (!best || list.length > best.length)) best = list;
+}
+
+var target = null;
+if (best) {
+for (var k = 0; k < best.length; k++) {
+if (clean(best[k].innerText || best[k].textContent) === want) { target = best[k]; break; }
+}
+if (!target && wantIndex >= 0 && wantIndex < best.length) target = best[wantIndex];
+}
+if (!target) {
+for (var n = 0; n < nodes.length && n < 900; n++) {
+var e2 = nodes[n];
+if (e2.children && e2.children.length > 1) continue;
+if (clean(e2.innerText || e2.textContent) === want) { target = e2; break; }
+}
+}
+if (!target) return { ok: false, reason: 'line-not-found' };
+
+try { target.scrollIntoView({ block: 'center' }); } catch (e) {}
+try {
+target.click();
+} catch (e) {
+target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+}
+return { ok: true, label: want };
+} catch (e) {
+return { ok: false, reason: String(e) };
+}
+})();

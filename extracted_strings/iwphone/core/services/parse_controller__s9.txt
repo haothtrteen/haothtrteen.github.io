@@ -1,0 +1,279 @@
+(function () {
+try {
+function attr(sel, name) {
+var el = document.querySelector(sel);
+return el \? (el.getAttribute(name) || '') : '';
+}
+function meta(prop) {
+return attr('meta[property="' + prop + '"]', 'content') ||
+attr('meta[name="' + prop + '"]', 'content');
+}
+function clean(v) {
+return String(v || '').replace(/\s+/g, ' ').trim();
+}
+
+var title = meta('og:title') || meta('twitter:title') || '';
+if (!title) {
+var h1 = document.querySelector('h1');
+if (h1) title = clean(h1.innerText || h1.textContent);
+}
+if (!title) title = clean(document.title);
+
+var cover = meta('og:image') || meta('twitter:image') || '';
+if (!cover) {
+var poster = document.querySelector('video[poster]');
+if (poster) cover = poster.getAttribute('poster') || '';
+}
+
+var desc = meta('og:description') || meta('description') || '';
+
+// 选集识别：只认「以集数标记开头」的链接，并按父容器分组取最大的一组。
+// 早期版本用的是「文本里包含 第N集」，结果把侧栏 / 底部推荐里的
+// 「原创 第10集」「奇幻 第2集」这类别的作品也当成选集，点进去就换了一部片。
+// 前缀必须是集数标记，相关推荐卡片（带类型前缀）自然被排除。
+var epHead = /^(\?:[\s【\[（(·、,，\-_/]*)(\?:第\s*[0-9一二三四五六七八九十百千两]+\s*[集话期回篇]|EP\?[-_.]\?\s*[0-9]{1,4}|[0-9]{1,3}\s*[集话])/i;
+var epLoose = /(第\s*[0-9一二三四五六七八九十百千两]+\s*[集话期回篇]|EP\?[-_.]\?\s*[0-9]{1,4}|[0-9]{1,3}\s*[集话])/i;
+function sig(el) {
+if (!el) return '';
+var cls = (el.className || '').toString().replace(/\s+/g, ' ').trim().split(' ')[0];
+return el.tagName + '.' + cls;
+}
+function groupKey(a) {
+var p = a.parentElement;
+return sig(p) + '|' + sig(p && p.parentElement);
+}
+
+// 选集常常按线路分成多组（一条线路一个 <ul>）：优先取「当前可见」的
+// 那一组 —— MacCMS 这类站点用 display:none 藏起其它线路的列表。
+// 全部可见时退回元素最多的一组，再按标题去重（多线路的选集区都叫「第1话」）。
+function visible(el) {
+try {
+if (el.getClientRects && el.getClientRects().length === 0) return false;
+if ('offsetParent' in el && el.offsetParent === null) return false;
+} catch (e) {}
+return true;
+}
+function dedupe(list) {
+var out = [];
+var seenUrl = {};
+var seenTitle = {};
+for (var j = 0; j < list.length && out.length < 300; j++) {
+var ep = list[j];
+var titleKey = ep.t.replace(/\s+/g, '');
+if (seenUrl[ep.u] || seenTitle[titleKey]) continue;
+seenUrl[ep.u] = 1;
+seenTitle[titleKey] = 1;
+out.push({ t: ep.t, u: ep.u });
+}
+return out;
+}
+function collect(scanned) {
+var best = null;
+var shownBest = null;
+for (var g = 0; g < scanned.order.length; g++) {
+var group = scanned.groups[scanned.order[g]];
+if (!group || !group.length) continue;
+if (!best || group.length > best.length) best = group;
+var shown = [];
+for (var v = 0; v < group.length; v++) {
+if (group[v].vis) shown.push(group[v]);
+}
+if (shown.length >= 2 && (!shownBest || shown.length > shownBest.length)) {
+shownBest = shown;
+}
+}
+return dedupe(shownBest || best || []);
+}
+function scan(re) {
+var groups = {};
+var order = [];
+var anchors = document.querySelectorAll('a[href]');
+for (var i = 0; i < anchors.length; i++) {
+var a = anchors[i];
+var text = clean(a.innerText || a.textContent);
+if (!text || text.length > 30) continue;
+if (!re.test(text)) continue;
+var href = a.href || '';
+if (!/^https\?:/i.test(href)) continue;
+if (href.split('#')[0] === location.href.split('#')[0]) continue;
+var key = groupKey(a);
+if (!key) continue;
+if (!groups[key]) { groups[key] = []; order.push(key); }
+groups[key].push({ t: text, u: href, vis: visible(a) });
+}
+return { groups: groups, order: order };
+}
+
+var episodes = collect(scan(epHead));
+// 有些站点的集数写法不带「第/话」，严格模式一无所获时再放宽一次，
+// 仍然按分组取最大组，不会跨作品混抓。
+if (episodes.length === 0) episodes = collect(scan(epLoose));
+
+// 电影 / 剧场版详情页没有「第N集」，播放入口常写成「HD中字」「BD高清」
+// 「正片」这类清晰度标签。只在常规选集一无所获时启用，并按分组取一组，
+// 相关推荐位里的同名标签会被排除。
+var epMovie = /^(\?:HD|BD|HDTV|FHD|UHD|4K|8K|2160P\?|1080P\?|720P\?|480P\?|超清|高清|蓝光|标清|正片|完整版|剧场版|电影)(\?:[·\-_/ ]\?(\?:中字|中英|双语|双字|中文字幕|国语|粤语|高清|蓝光|版)){0,3}$/i;
+var movieSlotRe = /(^|[\s_-])(recommend|related|rank|hot|slide|guess|friend|footer|sidebar|side-bar|newslist|vodlist|stui-vodlist|module-item|grid)([\s_-]|$)/i;
+function inMovieSlot(el) {
+var node = el;
+for (var d = 0; d < 5 && node; d++) {
+var hint = ((node.className || '') + ' ' + (node.id || '')).toString();
+if (movieSlotRe.test(hint)) return true;
+node = node.parentElement;
+}
+return false;
+}
+function scanMovie() {
+var groups = {};
+var order = [];
+var anchors = document.querySelectorAll('a[href]');
+for (var i = 0; i < anchors.length && i < 900; i++) {
+var a = anchors[i];
+var text = clean(a.innerText || a.textContent);
+if (!text || text.length > 12 || !epMovie.test(text)) continue;
+if (/(下载|迅雷|磁力|网盘|客户端|APP|预告)/i.test(text)) continue;
+var href = a.href || '';
+if (!/^https\?:/i.test(href)) continue;
+if (href.split('#')[0] === location.href.split('#')[0]) continue;
+if (inMovieSlot(a)) continue;
+var key = groupKey(a);
+if (!key) continue;
+if (!groups[key]) { groups[key] = []; order.push(key); }
+groups[key].push({ t: text, u: href, vis: visible(a) });
+}
+return { groups: groups, order: order };
+}
+if (episodes.length === 0) episodes = collect(scanMovie());
+
+var video = document.querySelector('video');
+var videoSrc = '';
+try {
+videoSrc = video \? (video.currentSrc || video.src || '') : '';
+} catch (e) {}
+
+// 页面里是否已经有播放器。选集页也有「第1集…第12集」，区别就在于有没有
+// 播放器：有播放器 = 播放页（选集是附属功能），没有 = 还得再点一集进去。
+var hasPlayer = !!video;
+if (!hasPlayer) {
+try {
+var frames = document.querySelectorAll('iframe[src]');
+for (var f = 0; f < frames.length && f < 20; f++) {
+var src = frames[f].getAttribute('src') || '';
+if (/(player|play|video|m3u8|vod|embed)/i.test(src)) { hasPlayer = true; break; }
+}
+} catch (e) {}
+}
+if (!hasPlayer) {
+try {
+var box = document.querySelector(
+'[class*="player" i],[id*="player" i],[class*="video" i],[id*="video" i]'
+);
+if (box) {
+var br = box.getBoundingClientRect \? box.getBoundingClientRect() : null;
+if (br && br.width > 120 && br.height > 80) hasPlayer = true;
+}
+} catch (e) {}
+}
+
+// ── 站点线路标签（线路一 / 云端线路 / Mahoo…）─────────────────────────
+// 标签文字常带集数角标（「云端线路10」），也会带站点自己的前缀。
+// 先去掉尾部角标再匹配；「已下线 / 失效」这类不可用线路直接跳过。
+function isActive(el) {
+var hint = ((el.className || '') + ' ' + (el.id || '') + ' ' +
+(el.getAttribute('aria-selected') || '')).toString().toLowerCase();
+if (el.getAttribute('aria-selected') === 'true') return true;
+return /(^|[\s_-])(on|active|current|curr|selected|now|checked)([\s_-]|$)/.test(hint);
+}
+var lines = [];
+try {
+var lineGroups = {};
+var lineOrder = [];
+var lineRe = /^(\?:.{0,8}线路[0-9一二三四五六七八九十]{0,3}|l[0-9]{1,2}|播放(\?:[0-9ivx]{1,4}|[一二三四五六七八九十]{1,4}))$/i;
+var skipLineRe = /(已下线|已失效|失效|停用|下线|维护|暂无)/i;
+// 选集 / 影片入口不该被当成线路：同一排容器里同时有「播放 I」和
+// 「HD中字」时，兄弟补齐只能收前者。
+var notLineRe = /^(\?:第\s*[0-9一二三四五六七八九十]+\s*[集话期回篇]|HD|BD|FHD|UHD|4K|8K|1080|720|480|正片|完整版|剧场版|电影|中字|中英|双语|双字|国语|粤语|预告)/i;
+function isEpisodeLabel(text) {
+return !/线路/.test(text) && notLineRe.test(text);
+}
+function lineText(el) {
+// 图标字体（<i class="fa">&#xe679;</i>）会作为私用区字符混进文本，先去掉。
+var raw = clean(el.innerText || el.textContent)
+.replace(/[\uE000-\uF8FF\uFE00-\uFE0F]/g, '')
+.replace(/^[^0-9A-Za-z\u4e00-\u9fa5]+/, '')
+.replace(/\s+/g, '');
+if (!raw || raw.length > 14 || skipLineRe.test(raw) || isEpisodeLabel(raw)) return '';
+// 去掉「云端线路10」末尾的集数角标；「播放 I / 播放 1」的编号
+// 是标签本身，去掉就会让多条线路变成同一个名字。
+var text = /^播放/.test(raw) \? raw : raw.replace(/[0-9０-９]{1,4}$/, '');
+if (!text || text.length > 10 || !lineRe.test(text)) return '';
+return text;
+}
+var nodes = document.querySelectorAll('a,button,li,span,div');
+for (var i = 0; i < nodes.length && i < 900; i++) {
+var el = nodes[i];
+// 标签本身常带角标（<a><i/>云端线路<span class="badge">10</span></a>），
+// 所以不能按「子节点数」过滤；改成：内部还嵌着可点的链接/按钮才算容器，
+// 否则整条 tab 栏的文字会被当成一个标签。
+if (el.children && el.children.length > 0 && el.querySelector('a,button')) continue;
+var text = lineText(el);
+if (!text) continue;
+var key = groupKey(el);
+if (!key) continue;
+if (!lineGroups[key]) { lineGroups[key] = []; lineOrder.push(key); }
+lineGroups[key].push({ el: el, text: text });
+}
+var bestLines = null;
+for (var g = 0; g < lineOrder.length; g++) {
+var group = lineGroups[lineOrder[g]];
+if (!bestLines || group.length > bestLines.length) bestLines = group;
+}
+if (bestLines && bestLines.length > 1) {
+// 同一排 tab 里还有些线路名不含「线路」二字（mgnacg 的「Mahoo」），
+// 单看文字认不出来。已经确认这是线路栏之后，按同一个父容器补齐兄弟标签。
+var tabs = bestLines;
+var holder = bestLines[0].el.parentElement;
+if (holder && holder.children && holder.children.length >= 3 &&
+holder.children.length <= 12) {
+var siblings = [];
+for (var c = 0; c < holder.children.length; c++) {
+var sib = holder.children[c];
+if (sib.querySelector && sib.querySelector('a,button')) { siblings = null; break; }
+var rawSib = clean(sib.innerText || sib.textContent)
+.replace(/[\uE000-\uF8FF\uFE00-\uFE0F]/g, '')
+.replace(/^[^0-9A-Za-z\u4e00-\u9fa5]+/, '')
+.replace(/\s+/g, '');
+if (/^播放/.test(rawSib) === false) {
+rawSib = rawSib.replace(/[0-9０-９]{1,4}$/, '');
+}
+if (!rawSib || rawSib.length > 10 || skipLineRe.test(rawSib) ||
+isEpisodeLabel(rawSib)) continue;
+siblings.push({ el: sib, text: rawSib });
+}
+if (siblings && siblings.length >= 2) tabs = siblings;
+}
+var seenLine = {};
+for (var k = 0; k < tabs.length && lines.length < 8; k++) {
+var label = tabs[k].text;
+if (!label || seenLine[label]) continue;
+seenLine[label] = 1;
+lines.push({ t: label, i: k, on: isActive(tabs[k].el) });
+}
+}
+} catch (e) {}
+
+return {
+ok: true,
+url: location.href,
+title: title,
+cover: cover,
+desc: desc,
+episodes: episodes,
+lines: lines,
+hasPlayer: hasPlayer,
+videoSrc: videoSrc
+};
+} catch (e) {
+return { ok: false, reason: String(e) };
+}
+})();

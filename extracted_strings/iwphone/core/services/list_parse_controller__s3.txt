@@ -1,0 +1,215 @@
+(function () {
+try {
+function abs(u) {
+try { return new URL(String(u || ''), location.href).href; } catch (e) { return ''; }
+}
+function clean(v) {
+return String(v || '').replace(/\s+/g, ' ').trim();
+}
+function coverOf(img) {
+var attrs = ['data-src', 'data-original', 'data-lazy-src', 'data-echo', 'src'];
+for (var i = 0; i < attrs.length; i++) {
+var v = img.getAttribute(attrs[i]);
+if (v) return abs(v);
+}
+var set = img.getAttribute('srcset') || img.getAttribute('data-srcset') || '';
+if (set) {
+var first = set.split(',')[0].split(' ')[0];
+if (first) return abs(first);
+}
+return abs(img.currentSrc || img.src || '');
+}
+function sig(el) {
+if (!el) return '';
+var cls = (el.className || '').toString().replace(/\s+/g, ' ').trim().split(' ')[0];
+return el.tagName + '.' + cls;
+}
+
+// 卡片容器：B 站这类站点把标题放在图片链接的兄弟节点里，只读图片链接
+// 的 textContent 会拿到「添加至稍后再看241.4万50100:32」这种浮层文字。
+// 先向上找到整张卡片，再在卡片内部找真正的标题。
+var cardClassRe = /^(bili-video-card|video-card|vod-card|movie-card|item-card|card-item|grid-item|list-item|video-item|module-item|stui-vodlist__box|subject-item|media-item)$/i;
+function cardOf(a) {
+var n = a;
+for (var d = 0; d < 7 && n && n.nodeType === 1; d++, n = n.parentElement) {
+if (n.tagName === 'ARTICLE') return n;
+var tokens = (typeof n.className === 'string' \? n.className : '')
+.replace(/\s+/g, ' ').trim().split(' ');
+for (var i = 0; i < tokens.length; i++) {
+if (cardClassRe.test(tokens[i])) return n;
+}
+}
+return null;
+}
+
+var badTitleRe = /^(广告|推广|不感兴趣|添加至稍后再看|稍后再看|稍后观看|ad|sponsored|more|更多)$/i;
+var titleSkipRe = /(no-interest|interest|badge|tag|stat|count|duration|time|icon|author|up-name|username|desc|label|reason)/i;
+function titleOf(card, img, a) {
+function ok(value) {
+var t = clean(value);
+if (!t || t.length < 2) return '';
+if (badTitleRe.test(t)) return '';
+if (/添加至稍后再看/.test(t)) return '';
+return t;
+}
+if (card) {
+// 标题标签优先。B 站是 h3.bili-video-card__info--tit[title=...]。
+var heads = card.querySelectorAll('h1,h2,h3,h4,h5,a[title]');
+for (var i = 0; i < heads.length; i++) {
+var el = heads[i];
+var cls = (typeof el.className === 'string' \? el.className : '');
+if (titleSkipRe.test(cls)) continue;
+var t = ok(el.getAttribute('title') || el.innerText || el.textContent);
+if (t) return t;
+}
+}
+// 图片 alt / 链接 title 在普通影视站上通常就是片名。
+var fallback = ok(img.getAttribute('alt')) ||
+ok(a.getAttribute('title')) ||
+ok(a.textContent);
+if (fallback) {
+fallback = fallback
+.replace(/添加至稍后再看|添加至稍後再看|稍后再看|稍後再看/g, ' ')
+.replace(/\s+/g, ' ')
+.replace(/\s*(\?:\d+(\?:\.\d+)\?万\?)\?\s*\d{1,2}:\d{2}\s*$/, '')
+.trim();
+}
+if (fallback) return fallback;
+if (card) {
+// 没有标题标签时，再看带 title/name 语义的普通节点。
+var hinted = card.querySelectorAll(
+'[class*="title" i],[class*="tit" i],[class*="name" i]'
+);
+for (var j = 0; j < hinted.length; j++) {
+var e2 = hinted[j];
+var c2 = (typeof e2.className === 'string' \? e2.className : '');
+if (titleSkipRe.test(c2)) continue;
+var t2 = ok(e2.getAttribute('title') || e2.innerText || e2.textContent);
+if (t2) return t2;
+}
+}
+var p = a.parentElement;
+return p \? ok(p.textContent) : '';
+}
+
+// 弹窗/遮罩里的广告图经常也是「图片包在链接里」，如果不过滤，
+// 首页卡片组会被整个弹窗的几张图抢走。这里沿祖先链判断：
+// - 祖先 display:none / visibility:hidden → 隐藏内容，直接跳过
+// - 固定/粘性定位且面积大、z-index 高，或 class/id 明显是弹窗 → 跳过
+function overlayAncestor(el) {
+var n = el;
+var vw = window.innerWidth || 1;
+var vh = window.innerHeight || 1;
+for (var d = 0; d < 8 && n && n.nodeType === 1; d++, n = n.parentElement) {
+var s = window.getComputedStyle \? window.getComputedStyle(n) : null;
+if (!s) continue;
+if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) {
+return 'hidden';
+}
+var cls = ((n.id || '') + ' ' +
+(typeof n.className === 'string' \? n.className : '')).toString();
+var named = /(^|[\s_-])(pop|popup|modal|dialog|overlay|mask|layui-layer|swal2|ant-modal|van-popup|toast|notice|announce)([\s_-]|$)/i.test(cls);
+var fixed = s.position === 'fixed' || s.position === 'sticky';
+var absolute = s.position === 'absolute';
+var r = n.getBoundingClientRect \? n.getBoundingClientRect() : null;
+var big = r \? (r.width * r.height >= vw * vh * 0.25) : false;
+var z = parseInt(s.zIndex, 10);
+if (isNaN(z)) z = 0;
+if (fixed && (named || big || z >= 1000)) return 'overlay';
+if (absolute && named && (big || z >= 100)) return 'overlay';
+}
+return '';
+}
+
+var groups = {};
+var all = [];
+var imgs = document.querySelectorAll('img');
+for (var i = 0; i < imgs.length && i < 600; i++) {
+var img = imgs[i];
+if (!img.closest) continue;
+if (overlayAncestor(img)) continue;
+var a = img.closest('a');
+if (!a) continue;
+var href = a.href || a.getAttribute('href') || '';
+if (!/^https\?:/i.test(href)) continue;
+if (/\.(png|jpe\?g|gif|webp|svg|ico)(\\?|#|$)/i.test(href)) continue;
+var rect = img.getBoundingClientRect \? img.getBoundingClientRect() : null;
+if (rect && rect.width > 0 && rect.width < 40) continue;
+
+var cover = coverOf(img);
+if (!cover) continue;
+
+// 记录原始卡片的宽高比，首页按站点自己的版式排版（横卡就横着放）。
+var aspect = 0;
+if (rect && rect.width > 0 && rect.height > 0) {
+aspect = rect.width / rect.height;
+} else if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+aspect = img.naturalWidth / img.naturalHeight;
+}
+if (!(aspect > 0.35 && aspect < 3.2)) aspect = 0;
+if (aspect > 0) aspect = Math.round(aspect * 100) / 100;
+
+var card = cardOf(a);
+var title = titleOf(card, img, a);
+if (!title) continue;
+if (title.length > 80) title = title.slice(0, 80).trim();
+
+var entry = { t: title, c: cover, u: href, a: aspect };
+all.push(entry);
+// 图片链接的父节点在卡片列表里结构一致；沿用原来的分组方式，
+// 避免个别站点用不同修饰 class 把同一排卡片拆散。
+var key = sig(a.parentElement);
+if (!key) continue;
+if (!groups[key]) groups[key] = [];
+groups[key].push(entry);
+}
+
+var best = null;
+for (var k in groups) {
+if (!best || groups[k].length > best.length) best = groups[k];
+}
+// 站点把每张卡片包在不同 class 里时（B 站的行、带广告位的信息流），
+// 「父节点签名」分不出组：退回按链接路径前缀聚合（/video/BV…、/media/…）。
+if (!best || best.length < 3) {
+var byPrefix = {};
+for (var n = 0; n < all.length; n++) {
+var it = all[n];
+var prefix = '';
+try {
+var uu = new URL(it.u, location.href);
+prefix = uu.host + '/' + (uu.pathname.split('/')[1] || '');
+} catch (e) { prefix = ''; }
+if (!prefix) continue;
+if (!byPrefix[prefix]) byPrefix[prefix] = [];
+byPrefix[prefix].push(it);
+}
+var bestPrefix = null;
+for (var pkey in byPrefix) {
+if (!bestPrefix || byPrefix[pkey].length > bestPrefix.length) {
+bestPrefix = byPrefix[pkey];
+}
+}
+if (bestPrefix) best = bestPrefix;
+}
+
+var items = [];
+var seen = {};
+if (best) {
+for (var j = 0; j < best.length && items.length < 60; j++) {
+var item = best[j];
+if (seen[item.u]) continue;
+seen[item.u] = 1;
+items.push(item);
+}
+}
+
+var site = '';
+var og = document.querySelector('meta[property="og:site_name"]');
+if (og) site = clean(og.getAttribute('content'));
+var title = site || clean(document.title).split(/[-_|—]/)[0] || location.host;
+
+return { ok: true, url: location.href, title: title, items: items };
+} catch (e) {
+return { ok: false, reason: String(e) };
+}
+})();

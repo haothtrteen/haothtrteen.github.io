@@ -1,0 +1,106 @@
+(function () {
+try {
+var closed = 0, hidden = 0, unlocked = 0;
+var vw = window.innerWidth || document.documentElement.clientWidth || 1;
+var vh = window.innerHeight || document.documentElement.clientHeight || 1;
+
+function visible(el) {
+if (!el || !el.getBoundingClientRect) return false;
+var r = el.getBoundingClientRect();
+if (r.width < 8 || r.height < 8) return false;
+var s = window.getComputedStyle \? window.getComputedStyle(el) : null;
+if (!s) return true;
+return !(s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0);
+}
+
+function big(el) {
+var r = el.getBoundingClientRect();
+return r.width * r.height >= vw * vh * 0.35;
+}
+
+function modalLike(el) {
+var s = window.getComputedStyle \? window.getComputedStyle(el) : null;
+if (!s) return false;
+var z = parseInt(s.zIndex, 10);
+if (isNaN(z)) z = 0;
+var cls = ((el.id || '') + ' ' +
+(typeof el.className === 'string' \? el.className : '')).toString();
+var named = /(^|[\s_-])(pop|popup|modal|dialog|overlay|mask|layui-layer|swal2|ant-modal|van-popup)([\s_-]|$)/i.test(cls);
+if (s.position === 'fixed') return big(el) || named || z >= 1000;
+if (s.position === 'absolute') return (big(el) || named) && z >= 10;
+return false;
+}
+
+var closeText = /^(×|✕|✖|╳|x|关闭|關閉|close|我知道了|知道了|好的|确定|確定|ok|稍后|稍後|以后再说|暂不|暫不|跳过|跳過|取消)/i;
+var overlaySel = [
+'[role="dialog"]', '[aria-modal="true"]',
+'.modal', '.popup', '.pop', '.dialog', '.overlay', '.mask', '.modal-mask',
+'.layui-layer', '.el-dialog__wrapper', '.el-overlay', '.swal2-container',
+'.ant-modal-wrap', '.van-popup', '.weui-desktop-dialog', '.popup-container',
+'[class*="popup"]', '[class*="modal"]', '[id*="popup"]', '[id*="modal"]',
+'[class*="notice"]', '[class*="announce"]'
+].join(',');
+
+var nodes = document.querySelectorAll(overlaySel);
+for (var i = 0; i < nodes.length && i < 80; i++) {
+var el = nodes[i];
+if (!visible(el) || !modalLike(el)) continue;
+
+// 先找「关闭 / × / 我知道了」这类按钮，用站点自己的关闭逻辑最稳。
+var hit = null;
+var buttons = el.querySelectorAll(
+'button,a,span,i,div[role="button"],[class*="close"],[aria-label],[title]'
+);
+for (var j = 0; j < buttons.length && j < 100; j++) {
+var b = buttons[j];
+if (!visible(b)) continue;
+var text = (b.textContent || '').replace(/\s+/g, '');
+var meta = ((b.getAttribute('aria-label') || '') + ' ' +
+(b.getAttribute('title') || '') + ' ' +
+(typeof b.className === 'string' \? b.className : '')).toString();
+if (closeText.test(text) || /close|关闭|close-btn|btn-close/i.test(meta)) {
+hit = b;
+break;
+}
+}
+if (hit) {
+try { hit.click(); closed++; } catch (e) {}
+continue;
+}
+
+// 没有关闭按钮：整层隐藏，但含播放器 / 正文的容器不动，避免误伤。
+if (el.querySelector('video,audio,article')) continue;
+if (big(el)) {
+el.style.setProperty('display', 'none', 'important');
+hidden++;
+}
+}
+
+// 弹窗常把滚动锁在 body / html 上；只解「看起来确实被锁」的情况。
+var b = document.body;
+var h = document.documentElement;
+if (b && b.style) {
+var bs = window.getComputedStyle \? window.getComputedStyle(b) : null;
+var cls = (b.className || '').toString();
+var locked = /modal-open|no-scroll|overflow-hidden|noscroll|popup-open/i.test(cls) ||
+(bs && bs.overflow === 'hidden');
+if (locked) {
+b.style.setProperty('overflow', 'auto', 'important');
+if (bs && bs.position === 'fixed') b.style.setProperty('position', 'static', 'important');
+b.className = cls.replace(/\b(modal-open|no-scroll|overflow-hidden|noscroll|popup-open)\b/gi, '').trim();
+unlocked++;
+}
+}
+if (h && h.style) {
+var hs = window.getComputedStyle \? window.getComputedStyle(h) : null;
+if (hs && hs.overflow === 'hidden') {
+h.style.setProperty('overflow', 'auto', 'important');
+unlocked++;
+}
+}
+
+return { ok: true, closed: closed, hidden: hidden, unlocked: unlocked };
+} catch (e) {
+return { ok: false, reason: String(e) };
+}
+})();

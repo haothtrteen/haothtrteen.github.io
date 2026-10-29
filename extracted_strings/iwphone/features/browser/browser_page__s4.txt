@@ -1,0 +1,170 @@
+(function () {
+if (window.__iwphoneRecorderInstalled) return;
+window.__iwphoneRecorderInstalled = true;
+
+var MAX_STEPS = 80;
+var steps = [];
+
+function send(payload) {
+try {
+window.flutter_inappwebview.callHandler('iwphoneRecord', payload);
+} catch (e) {}
+}
+
+function visible(el) {
+if (!el || el.nodeType !== 1) return false;
+if (el.getClientRects().length === 0) return false;
+var style = window.getComputedStyle \? window.getComputedStyle(el) : null;
+if (style && (style.display === 'none' || style.visibility === 'hidden')) {
+return false;
+}
+return true;
+}
+
+function classesOf(el) {
+var raw = (el.getAttribute('class') || '').trim();
+if (!raw) return [];
+return raw.split(/\s+/).filter(function (c) {
+return /^[A-Za-z_][\w-]*$/.test(c);
+}).slice(0, 2);
+}
+
+function nthSuffix(el) {
+var parent = el.parentElement;
+if (!parent) return '';
+var same = [];
+for (var i = 0; i < parent.children.length; i++) {
+if (parent.children[i].tagName === el.tagName) same.push(parent.children[i]);
+}
+if (same.length <= 1 || same.indexOf(el) < 0) return '';
+return ':nth-of-type(' + (same.indexOf(el) + 1) + ')';
+}
+
+// 带序号，用于回放单次点击。
+function pathOf(el) {
+var parts = [];
+var node = el;
+while (node && node.nodeType === 1 && node !== document.documentElement) {
+var id = node.getAttribute('id');
+if (id && /^[A-Za-z][\w-]*$/.test(id)) {
+parts.unshift('#' + id);
+break;
+}
+var tag = node.tagName.toLowerCase();
+var cls = classesOf(node);
+parts.unshift(tag + (cls.length \? '.' + cls.join('.') : '') + nthSuffix(node));
+node = node.parentElement;
+}
+return parts.join(' > ');
+}
+
+// 不带序号，用于「第 N 项都长这样」的模板。
+function signatureOf(el) {
+var parts = [];
+var node = el;
+while (node && node.nodeType === 1 && node !== document.body && node !== document.documentElement) {
+var id = node.getAttribute('id');
+if (id && /^[A-Za-z][\w-]*$/.test(id)) {
+parts.unshift('#' + id);
+break;
+}
+var tag = node.tagName.toLowerCase();
+var cls = classesOf(node);
+parts.unshift(tag + (cls.length \? '.' + cls.join('.') : ''));
+node = node.parentElement;
+}
+if (parts.length > 3) parts = parts.slice(parts.length - 3);
+return parts.join(' > ');
+}
+
+function textOf(el) {
+var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+return text.slice(0, 80);
+}
+
+function hrefOf(el) {
+var a = el.closest \? el.closest('a[href]') : null;
+if (!a) return '';
+var href = a.getAttribute('href') || '';
+if (!href || href === '#' || href.indexOf('javascript:') === 0) return '';
+try { return new URL(href, location.href).href; } catch (e) { return href; }
+}
+
+function push(payload) {
+payload.at = Date.now();
+payload.url = location.href;
+if (steps.length >= MAX_STEPS) steps.shift();
+steps.push(payload);
+send(payload);
+}
+
+document.addEventListener('click', function (event) {
+if (!window.__iwphoneRecording) return;
+var el = event.target;
+if (!el || el.nodeType !== 1) return;
+push({
+t: 'click',
+sel: pathOf(el),
+tag: el.tagName.toLowerCase(),
+text: textOf(el),
+href: hrefOf(el)
+});
+}, true);
+
+document.addEventListener('change', function (event) {
+if (!window.__iwphoneRecording) return;
+var el = event.target;
+if (!el || el.nodeType !== 1) return;
+push({
+t: 'input',
+sel: pathOf(el),
+tag: el.tagName.toLowerCase(),
+value: String(el.value == null \? '' : el.value).slice(0, 120)
+});
+}, true);
+
+// 扫描当前页的重复列表项，给出一组可以直接写进规则的候选选择器。
+window.__iwphoneRecorderSummary = function () {
+var groups = {};
+var anchors = document.querySelectorAll('a[href]');
+for (var i = 0; i < anchors.length; i++) {
+var a = anchors[i];
+if (!visible(a)) continue;
+var href = a.getAttribute('href') || '';
+if (!href || href === '#' || href.indexOf('javascript:') === 0) continue;
+var item = a.parentElement;
+if (!item || item === document.body) continue;
+var key = signatureOf(item);
+if (!key) continue;
+if (!groups[key]) groups[key] = { item: key, count: 0, sample: [] };
+groups[key].count++;
+if (groups[key].sample.length < 5) {
+groups[key].sample.push({ text: textOf(a), href: hrefOf(a) });
+}
+}
+
+var lists = [];
+Object.keys(groups).forEach(function (key) {
+var g = groups[key];
+if (g.count < 3 || g.count > 400) return;
+var hasTitle = g.sample.some(function (s) { return s.text; });
+lists.push({
+item: g.item,
+// 容器里如果有标题节点就优先用它，否则退回链接本身。
+title: hasTitle \? 'a' : '',
+link: 'a@href',
+cover: 'img@src',
+count: g.count,
+sample: g.sample
+});
+});
+lists.sort(function (x, y) { return y.count - x.count; });
+return JSON.stringify({
+url: location.href,
+title: document.title || '',
+at: Date.now(),
+savedSteps: steps.length,
+lists: lists.slice(0, 5)
+});
+};
+})();
