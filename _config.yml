@@ -1,0 +1,27 @@
+title: haothtrteen
+description: 折腾安卓、玩机工具与网页小玩意的记录
+author: haothtrteen
+lang: zh-CN
+timezone: Asia/Shanghai
+
+url: "https://haothtrteen.github.io"
+baseurl: ""
+
+markdown: kramdown
+permalink: /:year/:month/:day/:title/
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: page

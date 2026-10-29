@@ -1,0 +1,21 @@
+---
+layout: default
+---
+<p class="intro">{{ site.description }}</p>
+
+<ul class="post-list">
+{% for post in site.posts %}
+  <li>
+    <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+    <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+    {% assign summary = post.excerpt | strip_html | normalize_whitespace %}
+    {% if summary != "" %}
+    <p class="excerpt">{{ summary | truncate: 100 }}</p>
+    {% endif %}
+  </li>
+{% endfor %}
+</ul>
+
+{% if site.posts.size == 0 %}
+<p class="empty">还没有文章，在 <code>_posts/</code> 里新建一个 Markdown 文件就会出现在这里。</p>
+{% endif %}
