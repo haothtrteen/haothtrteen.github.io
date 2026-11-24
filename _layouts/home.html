@@ -1,7 +1,7 @@
 ---
 layout: default
 ---
-<section class="hero-full">
+<section class="hero-full hero-screen">
   <div class="hero-aurora" aria-hidden="true"></div>
   <div class="hero-grid" aria-hidden="true"></div>
 
@@ -48,9 +48,16 @@ layout: default
   </div>
 
   <div class="hero-fade" aria-hidden="true"></div>
+
+  <a class="scroll-cue" id="scroll-cue" href="#articles" aria-label="向下滚动查看文章">
+    <span>向下滚动</span>
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
 </section>
 
-<div class="home-body">
+<div class="home-body" id="articles">
   <div class="section-head">
     <h2>最近文章</h2>
     <span id="post-count">{{ site.posts | size }} 篇</span>

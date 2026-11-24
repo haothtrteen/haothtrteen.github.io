@@ -19,6 +19,11 @@
   var progress = document.getElementById('progress');
   var toTop = document.getElementById('to-top');
   var isHome = document.body.classList.contains('home');
+  var hero = document.querySelector('.hero-screen');
+  var heroInner = document.querySelector('.hero-inner');
+  var heroGrid = document.querySelector('.hero-grid');
+  var scrollCue = document.getElementById('scroll-cue');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function onScroll() {
     var doc = document.documentElement;
@@ -30,7 +35,17 @@
       toTop.classList.toggle('is-visible', doc.scrollTop > 400);
     }
     if (isHome) {
-      document.body.classList.toggle('is-scrolled', doc.scrollTop > 10);
+      var y = doc.scrollTop;
+      document.body.classList.toggle('is-scrolled', y > 10);
+      if (scrollCue) {
+        scrollCue.classList.toggle('is-hidden', y > 60);
+      }
+      if (heroInner && !reduceMotion) {
+        var vh = window.innerHeight || 800;
+        var shift = Math.min(y, vh) * 0.14;
+        heroInner.style.transform = 'translate3d(0,' + shift.toFixed(1) + 'px,0)';
+        heroInner.style.opacity = Math.max(0, 1 - y / (vh * 0.85)).toFixed(3);
+      }
     }
   }
 
@@ -40,6 +55,23 @@
   if (toTop) {
     toTop.addEventListener('click', function () {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  /* ---------- 头图视差 ---------- */
+
+  if (hero && heroGrid && !reduceMotion) {
+    hero.addEventListener('pointermove', function (e) {
+      var rect = hero.getBoundingClientRect();
+      var mx = (e.clientX - rect.left) / rect.width - 0.5;
+      var my = (e.clientY - rect.top) / rect.height - 0.5;
+      heroGrid.style.setProperty('--mx', mx.toFixed(3));
+      heroGrid.style.setProperty('--my', my.toFixed(3));
+    });
+
+    hero.addEventListener('pointerleave', function () {
+      heroGrid.style.setProperty('--mx', '0');
+      heroGrid.style.setProperty('--my', '0');
     });
   }
 
