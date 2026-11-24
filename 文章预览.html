@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IWPhone：从 PC 工具箱到免 root 模块管理器 · haothtrteen</title>
+  <meta name="description" content="一套围绕安卓设备管理的工具链，包含 WPF 桌面端、免 root 模块运行时和网页版">
+  <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#15171c" media="(prefers-color-scheme: dark)">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f6feb'/%3E%3Cpath d='M10 22V10h3v5h6v-5h3v12h-3v-4.5h-6V22z' fill='%23fff'/%3E%3C/svg%3E">
+  <style>
+:root {
+  --bg: #fbfbfd;
+  --bg-soft: #f4f5f8;
+  --surface: #ffffff;
+  --fg: #1c2026;
+  --fg-soft: #3d4450;
+  --muted: #6b7280;
+  --accent: #2f6feb;
+  --accent-soft: rgba(47, 111, 235, 0.1);
+  --border: #e6e8ee;
+  --code-bg: #f5f6f9;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --shadow-hover: 0 2px 4px rgba(16, 24, 40, 0.06), 0 14px 32px rgba(16, 24, 40, 0.1);
+}
+
+html[data-theme="dark"] {
+  --bg: #15171c;
+  --bg-soft: #1a1d23;
+  --surface: #1c1f26;
+  --fg: #e8eaee;
+  --fg-soft: #c8ccd4;
+  --muted: #98a0ab;
+  --accent: #7aa2ff;
+  --accent-soft: rgba(122, 162, 255, 0.14);
+  --border: #2a2f38;
+  --code-bg: #22262e;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.36), 0 14px 32px rgba(0, 0, 0, 0.38);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --bg: #15171c;
+    --bg-soft: #1a1d23;
+    --surface: #1c1f26;
+    --fg: #e8eaee;
+    --fg-soft: #c8ccd4;
+    --muted: #98a0ab;
+    --accent: #7aa2ff;
+    --accent-soft: rgba(122, 162, 255, 0.14);
+    --border: #2a2f38;
+    --code-bg: #22262e;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "HarmonyOS Sans SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-size: 16px;
+  line-height: 1.78;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 420px;
+  background:
+    radial-gradient(680px 300px at 20% -10%, var(--accent-soft), transparent 70%),
+    radial-gradient(520px 260px at 85% -20%, rgba(120, 90, 255, 0.08), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+img { max-width: 100%; height: auto; }
+
+/* ---------- 顶部进度条 ---------- */
+
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 60;
+  background: transparent;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), #8f6bff);
+  transition: width 0.1s linear;
+}
+
+/* ---------- 头部 ---------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px 20px;
+}
+
+.site-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+.brand-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--accent), #8f6bff);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.site-nav > a {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.site-nav > a:hover {
+  color: var(--fg);
+  background: var(--bg-soft);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-left: 4px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--fg-soft);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+html[data-theme="light"] .icon-moon,
+html[data-theme="dark"] .icon-sun { display: none; }
+
+/* ---------- 主体 ---------- */
+
+.page-content {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+}
+
+/* ---------- 首页沉浸式头图 ---------- */
+
+.home::before { display: none; }
+
+.home .page-content {
+  max-width: none;
+  padding: 0 0 72px;
+}
+
+.hero-full {
+  position: relative;
+  overflow: hidden;
+  padding: 124px 20px 116px;
+  text-align: center;
+  isolation: isolate;
+}
+
+.hero-aurora {
+  position: absolute;
+  inset: -40% -25% -20%;
+  z-index: -2;
+  background:
+    radial-gradient(42% 44% at 24% 30%, rgba(47, 111, 235, 0.30), transparent 68%),
+    radial-gradient(38% 40% at 77% 24%, rgba(143, 107, 255, 0.26), transparent 68%),
+    radial-gradient(40% 42% at 62% 74%, rgba(38, 198, 180, 0.18), transparent 70%);
+  filter: blur(28px);
+  animation: aurora-drift 24s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to { transform: translate3d(3%, 2.5%, 0) scale(1.07); }
+}
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--fg) 10%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(72% 62% at 50% 38%, #000 12%, transparent 76%);
+  mask-image: radial-gradient(72% 62% at 50% 38%, #000 12%, transparent 76%);
+  opacity: 0.55;
+}
+
+.hero-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 150px;
+  background: linear-gradient(180deg, transparent, var(--bg) 82%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), #8f6bff);
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.avatar-lg {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 22px;
+  border-radius: 28px;
+  font-size: 40px;
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, var(--surface) 65%, transparent),
+    0 14px 38px color-mix(in srgb, var(--accent) 34%, transparent);
+}
+
+.hero-inner h1 {
+  margin: 0;
+  font-size: clamp(30px, 6vw, 42px);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.hero-bio {
+  margin: 16px auto 0;
+  max-width: 30em;
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: var(--muted);
+}
+
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 15px;
+  border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--fg-soft);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+  transition: color 0.15s, border-color 0.15s, transform 0.15s, background 0.15s;
+}
+
+.hero-link:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  transform: translateY(-1px);
+}
+
+.home-body {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.home .site-header {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: transparent;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.home.is-scrolled .site-header {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom-color: var(--border);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fg-soft);
+}
+
+.section-head span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ---------- 文章卡片 ---------- */
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.post-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.post-card h3 {
+  margin: 8px 0 0;
+  font-size: 19px;
+  line-height: 1.4;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.post-card:hover h3 { color: var(--accent); }
+
+.excerpt {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tag {
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.empty {
+  margin-top: 24px;
+  color: var(--muted);
+}
+
+/* ---------- 文章页 ---------- */
+
+.post-header {
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.post-header h1,
+.page h1 {
+  margin: 0 0 12px;
+  font-size: clamp(25px, 4.4vw, 31px);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.dot { opacity: 0.55; }
+
+.post-repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--fg-soft);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.post-repo:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.post-repo svg { flex: 0 0 auto; }
+
+.post-content {
+  font-size: 16.5px;
+  color: var(--fg-soft);
+}
+
+.post-content > *:first-child { margin-top: 0; }
+
+.post-content h2 {
+  margin: 40px 0 14px;
+  font-size: 21px;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  font-weight: 650;
+}
+
+.post-content h2::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 0.85em;
+  margin-right: 10px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), #8f6bff);
+  transform: translateY(0.06em);
+}
+
+.post-content h3 {
+  margin: 28px 0 10px;
+  font-size: 17.5px;
+  color: var(--fg);
+  font-weight: 650;
+}
+
+.post-content p { margin: 16px 0; }
+
+.post-content ul,
+.post-content ol {
+  padding-left: 1.35em;
+  margin: 14px 0;
+}
+
+.post-content li { margin: 6px 0; }
+
+.post-content li::marker { color: var(--accent); }
+
+.post-content a {
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: border-color 0.15s;
+}
+
+.post-content a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.post-content strong { color: var(--fg); font-weight: 650; }
+
+.post-content blockquote {
+  margin: 20px 0;
+  padding: 2px 18px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 10px 10px 0;
+  color: var(--muted);
+}
+
+.post-content hr {
+  margin: 36px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.post-content code {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875em;
+  color: var(--fg);
+}
+
+.post-content pre {
+  margin: 20px 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border-radius: 11px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.post-content pre code {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+}
+
+.post-content table {
+  width: 100%;
+  margin: 22px 0;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+
+.post-content th,
+.post-content td {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.post-content th {
+  background: var(--bg-soft);
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.post-content tbody tr:nth-child(even) { background: color-mix(in srgb, var(--bg-soft) 55%, transparent); }
+
+.post-content img {
+  display: block;
+  margin: 22px auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+/* ---------- 文章操作区 ---------- */
+
+.post-actions {
+  display: flex;
+  gap: 10px;
+  margin: 40px 0 0;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--fg-soft);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s;
+}
+
+.action-btn:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  transform: translateY(-1px);
+}
+
+.action-btn:active { transform: scale(0.97); }
+
+.action-btn.is-liked {
+  color: #e5484d;
+  border-color: color-mix(in srgb, #e5484d 45%, var(--border));
+  background: color-mix(in srgb, #e5484d 8%, var(--bg-soft));
+}
+
+.action-btn.is-liked svg path { fill: currentColor; }
+
+.like-count:not(:empty)::before { content: "·"; margin-right: 6px; opacity: 0.5; }
+
+/* ---------- 上下篇 ---------- */
+
+.post-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.post-nav a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.post-nav a:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  transform: translateY(-1px);
+}
+
+.nav-prev { grid-column: 1; }
+.nav-next { grid-column: 2; text-align: right; align-items: flex-end; }
+
+.nav-label {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+.nav-title {
+  font-size: 14.5px;
+  color: var(--fg);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-nav a:hover .nav-title { color: var(--accent); }
+
+.post-footer {
+  margin-top: 28px;
+  font-size: 14.5px;
+}
+
+/* ---------- 页脚 ---------- */
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 20px 44px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.site-footer p { margin: 4px 0; }
+
+.footer-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+/* ---------- 回到顶部 ---------- */
+
+.to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  z-index: 55;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--fg-soft);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s, color 0.15s;
+}
+
+.to-top.is-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.to-top:hover { color: var(--accent); }
+
+/* ---------- 提示条 ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  z-index: 70;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(24, 27, 33, 0.92);
+  color: #fff;
+  font-size: 14px;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---------- 404 ---------- */
+
+.notfound {
+  text-align: center;
+  padding: 56px 0;
+}
+
+.notfound h1 {
+  margin: 0 0 10px;
+  font-size: 56px;
+  background: linear-gradient(135deg, var(--accent), #8f6bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---------- 响应式 ---------- */
+
+@media (max-width: 560px) {
+  .header-inner { padding: 12px 16px; gap: 8px; }
+  .site-title { font-size: 16px; }
+  .site-nav { gap: 0; font-size: 14px; }
+  .site-nav > a { padding: 6px 6px; }
+  .theme-toggle { width: 32px; height: 32px; margin-left: 2px; }
+  .page-content { padding: 28px 16px 52px; }
+  .hero-full { padding: 104px 18px 96px; }
+  .avatar-lg { width: 76px; height: 76px; border-radius: 23px; font-size: 33px; margin-bottom: 18px; }
+  .hero-bio { font-size: 14.5px; }
+  .home-body { padding: 0 16px; }
+  .post-card { padding: 17px 18px; border-radius: 13px; }
+  .post-card h3 { font-size: 17.5px; }
+  .post-content { font-size: 16px; }
+  .post-nav { grid-template-columns: 1fr; }
+  .nav-next { grid-column: 1; text-align: left; align-items: flex-start; }
+  .post-actions { padding: 14px; }
+  .action-btn { padding: 8px 14px; }
+  .to-top { right: 14px; bottom: 18px; }
+}
+
+</style>
+</head>
+<body class="">
+  <div class="progress-bar" aria-hidden="true"><span id="progress"></span></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-title" href="https://haothtrteen.github.io/">
+        <span class="brand-dot"></span>haothtrteen
+      </a>
+      <nav class="site-nav">
+        <a href="https://haothtrteen.github.io/">首页</a>
+        <a href="https://haothtrteen.github.io/about/">关于</a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换深色模式">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>
+            </g>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M20 14.2A8.2 8.2 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-content">
+    
+
+
+
+<article class="post">
+  <header class="post-header">
+    <h1>IWPhone：从 PC 工具箱到免 root 模块管理器</h1>
+    <div class="post-meta">
+      <time datetime="2026-10-25T00:00:00+08:00">2026 年 10 月 25 日</time>
+      <span class="dot">·</span>
+      <span>7 分钟阅读</span>
+      <span class="dot">·</span>
+      <span class="views">阅读 <span id="busuanzi_value_page_pv">–</span></span>
+    </div>
+    
+    <div class="tags">
+      <span class="tag">安卓</span><span class="tag">工具</span>
+    </div>
+    
+    
+    <a class="post-repo" href="https://github.com/haothtrteen/IWPhone" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      haothtrteen/IWPhone
+    </a>
+    
+  </header>
+
+  <div class="post-content">
+    <p>IWPhone 是我做得最久的一条线，从最早的安卓端工具箱，扩展成了现在的三块：PC 端工具箱、免 root 模块管理器，以及一个跑在浏览器里的网页版。</p>
+
+<p>三者的共同点是：<strong>尽量不依赖电脑、不依赖 root，把玩机的门槛降下来。</strong></p>
+
+<h2 id="iwphone-toolboxpc-端">IWPhone Toolbox：PC 端</h2>
+
+<p><a href="https://github.com/haothtrteen/IWPhone">IWPhone</a> 是基于 WPF（C#）写的桌面工具箱，主要解决”手机上不好操作、电脑上更顺手”的那部分工作。它不是一个单点工具，而是把玩机过程中零散的操作收进一个界面：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>模块</th>
+      <th>能力</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>设备信息</td>
+      <td>型号、品牌、系统版本（Android / MIUI / ColorOS）、内核、内存与存储、电池健康度</td>
+    </tr>
+    <tr>
+      <td>投屏</td>
+      <td>基于 scrcpy 的电脑投手机，支持鼠标键盘反向控制；手机投电脑可作副屏</td>
+    </tr>
+    <tr>
+      <td>驱动与依赖</td>
+      <td>自动识别 ADB / 厂商驱动，一键安装修复；自动拉取 Fastboot、Magisk 工具包</td>
+    </tr>
+    <tr>
+      <td>应用管理</td>
+      <td>APK 安装卸载、含私有目录的整包备份与还原、系统预装应用的冻结与精简</td>
+    </tr>
+    <tr>
+      <td>插件仓库</td>
+      <td>基于 C# MEF 的动态插件加载，字体替换、主题美化这类功能都做成插件</td>
+    </tr>
+    <tr>
+      <td>安全工具</td>
+      <td>Bootloader 解锁引导、第三方 Recovery 刷入、恶意软件与漏洞扫描</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>技术上是 WPF + C# 通过 ADB 协议和设备通信，功能按插件拆分，启用或禁用互不影响。官方给的支持范围是 Android 5.1 ~ 14 与 Windows 10 ~ 11。</p>
+
+<h2 id="iwphonemodules免-root-模块管理器">IwphoneModules：免 root 模块管理器</h2>
+
+<p><a href="https://github.com/haothtrteen/IwphoneModules">IwphoneModules</a> 解决的是另一个问题：想做系统级调整（省电、性能调度、动画调速、隐私开关），传统路径是 Root + Magisk，但门槛高、有风险、影响保修。</p>
+
+<p>它通过系统自带的「无线调试」拿到 shell 权限，再配一套运行时来跑免 root 模块。三块能力：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>能力</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>自持 adb</td>
+      <td>应用内捆绑 adb 二进制，自己配对、自己连接，全程不需要电脑</td>
+    </tr>
+    <tr>
+      <td>模块运行时</td>
+      <td>启停、冲突检测、沙箱记账、配置、日志、开机自启</td>
+    </tr>
+    <tr>
+      <td>兜底机制</td>
+      <td>写前快照，记下原值，一键还原到改动之前</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="全程在手机里完成的引导">全程在手机里完成的引导</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>① 配对设备    通知栏输入配对码（端口由 mDNS 自动发现，不用手抄）
+② 部署框架    App 内置框架包，一键部署 / 修复 / 重置
+③ 设置访问密钥  自己设一把密钥（WebUI 鉴权，APatch 式）
+        ↓
+   框架运行 → 装模块 → 管理
+</code></pre></div></div>
+
+<p>配对端口用 mDNS 自动发现，连接端口固定在 <code class="language-plaintext highlighter-rouge">persist.adb.tcp.port=5555</code>，跨重启保持，配合 <code class="language-plaintext highlighter-rouge">BOOT_COMPLETED</code> 与 JobScheduler 做开机自启。App 用 <code class="language-plaintext highlighter-rouge">jniLibs</code> 的技巧自带 adb 二进制，绕开 Android 对应用数据目录 <code class="language-plaintext highlighter-rouge">noexec</code> 的限制。</p>
+
+<h3 id="兼容-magisk-式模块">兼容 Magisk 式模块</h3>
+
+<p>Magisk / KernelSU / AxManager 的模块结构基本一致，安装时会自动适配：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>原框架概念</th>
+      <th>本框架的处理</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">module.prop</code></td>
+      <td>生成等价元信息（含 <code class="language-plaintext highlighter-rouge">runtime=0</code> 标记常驻）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">service.sh</code></td>
+      <td>生成兼容入口，接进启动流程</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">post-fs-data.sh</code></td>
+      <td>启动时尽力执行，语义差异在文档里标明</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">action.sh</code> / <code class="language-plaintext highlighter-rouge">uninstall.sh</code></td>
+      <td>原样支持</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">webroot/</code> 每模块 WebUI</td>
+      <td>按 <code class="language-plaintext highlighter-rouge">/mod/&lt;模块名&gt;/</code> 提供，注入同构的 <code class="language-plaintext highlighter-rouge">ksu</code> 桥</td>
+    </tr>
+    <tr>
+      <td>BusyBox applet 假设</td>
+      <td>自带 BusyBox（358 个 applet），PATH 优先指向它</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>明确不支持的是 systemless 挂载、Zygisk / 内核模块、需要 <code class="language-plaintext highlighter-rouge">su</code> 的模块——这些在免 root 环境里物理上做不到。安装前会预检并给出判定：预计兼容 / 需要 Root / 无法判断。</p>
+
+<h3 id="写前快照">写前快照</h3>
+
+<p>免 root 玩机最怕的不是”没效果”，而是<strong>改坏了回不去</strong>。框架在沙箱的写操作拦截点上多做了一步：首次写某个系统资源前，记录它的原值。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$IWPHONE_ROOT/modsnap/&lt;模块名&gt;.snap
+settings put global window_animation_scale '1.0'   # [global.window_animation_scale]
+</code></pre></div></div>
+
+<p>每行本身就是一条可直接执行的还原命令。点「还原」时会先展示清单（当前值 → 还原值），确认后<strong>先停模块再还原</strong>——常驻模块的守卫循环会把值改回去，不停模块等于白还原。</p>
+
+<p>卸载模块不会删除快照，所以模块可以卸，它改过的设置仍能还原。</p>
+
+<h2 id="webiwphone网页版">webiwphone：网页版</h2>
+
+<p>最早的那批页面（<code class="language-plaintext highlighter-rouge">webadb.html</code>、<code class="language-plaintext highlighter-rouge">appops.html</code>、<code class="language-plaintext highlighter-rouge">iwhl.html</code>）原本挂在这个域名下，纯前端实现，用 WebUSB 连接设备。现在这部分已经迁到 IWPhone 仓库的 <code class="language-plaintext highlighter-rouge">webiwphone/</code> 目录里，和 PC 端放在一起维护。</p>
+
+<p>三条线各有分工：桌面端管复杂度高的操作，模块管理器管需要持续运行的调整，网页版管”随手打开就能用”的场景。</p>
+
+<h2 id="相关链接">相关链接</h2>
+
+<ul>
+  <li>仓库：<a href="https://github.com/haothtrteen/IWPhone">haothtrteen/IWPhone</a></li>
+  <li>原始 README：<a href="https://github.com/haothtrteen/IWPhone/blob/main/README.md">IWPhone/README.md</a></li>
+  <li>模块管理器仓库：<a href="https://github.com/haothtrteen/IwphoneModules">haothtrteen/IwphoneModules</a></li>
+</ul>
+
+  </div>
+
+  <div class="post-actions">
+    <button class="action-btn like-btn" id="like-btn" type="button"
+            data-key="20261025-iwphone"
+            data-namespace="haothtrteen-blog"
+            aria-label="点赞这篇文章">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M12 20.2s-7.4-4.6-7.4-9.4a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 4.8-7.4 9.4-7.4 9.4z"
+              fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+      <span class="like-label">点赞</span>
+      <span class="like-count" id="like-count"></span>
+    </button>
+
+    <button class="action-btn" id="share-btn" type="button"
+            data-title="IWPhone：从 PC 工具箱到免 root 模块管理器" aria-label="分享这篇文章">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="18" cy="5.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="6" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="18" cy="18.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M8.3 10.7l7.4-3.8M8.3 13.3l7.4 3.8" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+      <span>分享</span>
+    </button>
+  </div>
+
+  <nav class="post-nav">
+    
+    <a class="nav-prev" href="https://haothtrteen.github.io/2026/10/24/foaide/">
+      <span class="nav-label">上一篇</span>
+      <span class="nav-title">FOA：在手机上写 Flutter，直接打出 APK</span>
+    </a>
+    
+    
+  </nav>
+
+  <footer class="post-footer">
+    <a href="https://haothtrteen.github.io/">← 返回首页</a>
+  </footer>
+</article>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 haothtrteen</p>
+    <p class="footer-meta">
+      <span id="busuanzi_container_site_pv" class="stat">总访问 <span id="busuanzi_value_site_pv">–</span></span>
+      <span class="dot">·</span>
+      <span>由 Jekyll 与 GitHub Pages 驱动</span>
+    </p>
+  </footer>
+
+  <button class="to-top" id="to-top" type="button" aria-label="回到顶部">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path d="M12 19V6M6 12l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+(function () {
+  'use strict';
+
+  var root = document.documentElement;
+
+  /* ---------- 主题切换 ---------- */
+
+  var toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+  }
+
+  /* ---------- 阅读进度 ---------- */
+
+  var progress = document.getElementById('progress');
+  var toTop = document.getElementById('to-top');
+  var isHome = document.body.classList.contains('home');
+
+  function onScroll() {
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - doc.clientHeight;
+    if (progress) {
+      progress.style.width = max > 0 ? (doc.scrollTop / max) * 100 + '%' : '0';
+    }
+    if (toTop) {
+      toTop.classList.toggle('is-visible', doc.scrollTop > 400);
+    }
+    if (isHome) {
+      document.body.classList.toggle('is-scrolled', doc.scrollTop > 10);
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  if (toTop) {
+    toTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  /* ---------- 提示条 ---------- */
+
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+
+  function toast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.classList.remove('is-visible');
+    }, 2200);
+  }
+
+  /* ---------- 点赞 ---------- */
+
+  var likeBtn = document.getElementById('like-btn');
+  if (likeBtn) {
+    var countEl = document.getElementById('like-count');
+    var namespace = likeBtn.dataset.namespace;
+    var key = likeBtn.dataset.key;
+    var storageKey = 'liked:' + key;
+    var base = 'https://abacus.jasoncameron.dev';
+
+    var liked = false;
+    try { liked = localStorage.getItem(storageKey) === '1'; } catch (e) {}
+
+    if (liked) {
+      likeBtn.classList.add('is-liked');
+      likeBtn.querySelector('.like-label').textContent = '已赞';
+    }
+
+    function renderCount(value) {
+      if (!countEl) return;
+      countEl.textContent = value > 0 ? String(value) : '';
+    }
+
+    function request(path, options) {
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 8000);
+      return fetch(base + path, Object.assign({ signal: controller.signal }, options || {}))
+        .then(function (res) {
+          if (!res.ok) throw new Error('bad status');
+          return res.json();
+        })
+        .finally(function () { clearTimeout(timer); });
+    }
+
+    request('/get/' + encodeURIComponent(namespace) + '/' + encodeURIComponent(key))
+      .then(function (data) { renderCount(data.value || 0); })
+      .catch(function () { renderCount(0); });
+
+    likeBtn.addEventListener('click', function () {
+      if (liked) {
+        toast('已经点过赞了');
+        return;
+      }
+      liked = true;
+      try { localStorage.setItem(storageKey, '1'); } catch (e) {}
+      likeBtn.classList.add('is-liked');
+      likeBtn.querySelector('.like-label').textContent = '已赞';
+
+      request('/up/' + encodeURIComponent(namespace) + '/' + encodeURIComponent(key))
+        .then(function (data) {
+          renderCount(data.value || 0);
+          toast('谢谢支持');
+        })
+        .catch(function () {
+          toast('点赞已记录，计数服务暂时不可用');
+        });
+    });
+  }
+
+  /* ---------- 分享 ---------- */
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.top = '-1000px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(textarea);
+      if (ok) resolve(); else reject(new Error('copy failed'));
+    });
+  }
+
+  var shareBtn = document.getElementById('share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function () {
+      var payload = {
+        title: shareBtn.dataset.title || document.title,
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        navigator.share(payload).catch(function () {});
+        return;
+      }
+
+      copyText(payload.url)
+        .then(function () { toast('链接已复制'); })
+        .catch(function () { toast('请手动复制地址栏链接'); });
+    });
+  }
+})();
+
+
+</script>
+</body>
+</html>
