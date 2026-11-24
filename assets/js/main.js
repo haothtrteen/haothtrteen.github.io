@@ -18,6 +18,7 @@
 
   var progress = document.getElementById('progress');
   var toTop = document.getElementById('to-top');
+  var isHome = document.body.classList.contains('home');
 
   function onScroll() {
     var doc = document.documentElement;
@@ -27,6 +28,9 @@
     }
     if (toTop) {
       toTop.classList.toggle('is-visible', doc.scrollTop > 400);
+    }
+    if (isHome) {
+      document.body.classList.toggle('is-scrolled', doc.scrollTop > 10);
     }
   }
 
