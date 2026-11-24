@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!doctype html>
 <html lang="zh-CN">
 <head>
@@ -211,8 +214,204 @@
     .tag { font-size: 11px; }
   }
 
+  /* ---------- 阅读面板 ---------- */
+
+  .overlay { transition: opacity 0.3s ease, transform 0.3s ease; }
+  .hint { transition: opacity 0.3s ease; }
+
+  body.is-reading .overlay,
+  body.is-reading .hint { opacity: 0; pointer-events: none; transform: translateY(10px); }
+
+  .reader {
+    position: fixed;
+    inset: 0;
+    z-index: 6;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+  }
+
+  .reader[hidden] { display: none; }
+
+  .reader-sheet {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    width: min(480px, 100%);
+    height: 100%;
+    background: #131010;
+    border-left: 1px solid rgba(255, 196, 140, 0.16);
+    box-shadow: -40px 0 90px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transform: translateX(28px);
+    transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .reader.is-open .reader-sheet { opacity: 1; transform: none; }
+
+  .reader-head {
+    position: relative;
+    padding: 26px 26px 18px;
+    border-bottom: 1px solid rgba(255, 196, 140, 0.12);
+  }
+
+  .reader-meta {
+    display: flex;
+    gap: 7px;
+    font-size: 12px;
+    color: #9a9086;
+    letter-spacing: 0.04em;
+  }
+
+  .reader-dot { opacity: 0.5; }
+
+  .reader-head h2 {
+    margin: 10px 0 0;
+    padding-right: 36px;
+    font-size: 22px;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: #f5efe4;
+  }
+
+  .reader-close {
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 196, 140, 0.18);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #cfc6b8;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+
+  .reader-close:hover {
+    color: #ffb066;
+    border-color: rgba(255, 176, 102, 0.5);
+    background: rgba(255, 176, 102, 0.08);
+  }
+
+  .reader-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 26px 32px;
+    font-size: 15px;
+    line-height: 1.9;
+    color: #cfc6b8;
+    overscroll-behavior: contain;
+  }
+
+  .reader-body > *:first-child { margin-top: 0; }
+  .reader-body h2 { margin: 30px 0 12px; font-size: 18px; color: #f2e9db; }
+  .reader-body h2::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 0.8em;
+    margin-right: 9px;
+    border-radius: 2px;
+    background: #ffb066;
+    vertical-align: -0.06em;
+  }
+  .reader-body h3 { margin: 22px 0 8px; font-size: 15.5px; color: #f2e9db; }
+  .reader-body p { margin: 13px 0; }
+  .reader-body ul, .reader-body ol { padding-left: 1.3em; margin: 12px 0; }
+  .reader-body li { margin: 5px 0; }
+  .reader-body li::marker { color: #ffb066; }
+  .reader-body a { color: #ffc089; text-decoration: none; border-bottom: 1px solid rgba(255, 192, 137, 0.3); }
+  .reader-body strong { color: #f5efe4; }
+  .reader-body code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 0.88em;
+  }
+  .reader-body pre {
+    margin: 16px 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .reader-body pre code { background: none; padding: 0; }
+  .reader-body blockquote {
+    margin: 16px 0;
+    padding: 2px 14px;
+    border-left: 2px solid rgba(255, 176, 102, 0.5);
+    color: #a79d92;
+  }
+  .reader-body table { width: 100%; margin: 16px 0; border-collapse: collapse; font-size: 13.5px; }
+  .reader-body th, .reader-body td { padding: 8px 10px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: left; }
+  .reader-body th { background: rgba(255, 255, 255, 0.05); color: #f2e9db; }
+  .reader-body img { max-width: 100%; border-radius: 8px; }
+
+  .reader-foot {
+    padding: 14px 26px calc(16px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255, 196, 140, 0.12);
+    font-size: 13.5px;
+  }
+
+  .reader-foot a { color: #ffb066; text-decoration: none; }
+  .reader-foot a:hover { text-decoration: underline; }
+
+  .tip {
+    position: fixed;
+    z-index: 7;
+    max-width: 260px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(18, 15, 14, 0.94);
+    border: 1px solid rgba(255, 196, 140, 0.25);
+    color: #f0e7d8;
+    font-size: 12.5px;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    transform: translate(-50%, -150%);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .tip.is-visible { opacity: 1; }
+
+  .tip em {
+    display: block;
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: #a08f7c;
+  }
+
+  @media (max-width: 720px) {
+    .reader { align-items: flex-end; }
+    .reader-sheet {
+      width: 100%;
+      height: 74vh;
+      border-left: none;
+      border-top: 1px solid rgba(255, 196, 140, 0.16);
+      border-radius: 18px 18px 0 0;
+      transform: translateY(32px);
+    }
+    .reader-head { padding: 20px 20px 14px; }
+    .reader-head h2 { font-size: 19px; }
+    .reader-body { padding: 18px 20px 26px; font-size: 14.5px; }
+    .reader-foot { padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .dot-pulse { animation: none; opacity: 1; }
+    .reader-sheet { transition: none; }
   }
 </style>
 </head>
@@ -225,14 +424,42 @@
 <div class="overlay">
   <div class="tag"><i></i>3D · 深夜书店</div>
   <h1>在书架之间<br>翻一翻</h1>
-  <p class="lede">一个用 three.js 搭的小场景：木头、暖灯、和排不满的书架。场景是真的在渲染，不是一张图。</p>
+  <p class="lede">桌上立着六本书，每一本都是一篇文章。点开一本，就在这里读完。</p>
   <div class="actions">
     <a class="btn primary" href="/">进入博客</a>
     <a class="btn ghost" href="/#articles">看文章</a>
   </div>
 </div>
 
-<div class="hint">拖拽旋转 · 滚轮缩放 · 双击复位</div>
+<div class="hint">拖拽旋转 · 滚轮缩放 · 点击书本阅读</div>
+
+<div class="tip" id="tip" hidden><span id="tip-title"></span><em>点击阅读</em></div>
+
+<section class="reader" id="reader" hidden aria-label="文章阅读面板">
+  <div class="reader-sheet">
+    <header class="reader-head">
+      <div class="reader-meta">
+        <span id="reader-date"></span>
+        <span class="reader-dot">·</span>
+        <span id="reader-tags"></span>
+      </div>
+      <h2 id="reader-title"></h2>
+      <button class="reader-close" id="reader-close" type="button" aria-label="合上书">✕</button>
+    </header>
+    <div class="reader-body" id="reader-body"></div>
+    <footer class="reader-foot">
+      <a id="reader-link" href="/">在博客中打开 →</a>
+    </footer>
+  </div>
+</section>
+
+<script type="application/json" id="post-data">
+[
+{% for post in site.posts %}
+{"title": {{ post.title | jsonify }}, "url": {{ post.url | relative_url | jsonify }}, "date": {{ post.date | date: "%Y-%m-%d" | jsonify }}, "tags": {{ post.tags | jsonify }}, "content": {{ post.content | jsonify }}}{% unless forloop.last %},{% endunless %}
+{% endfor %}
+]
+</script>
 
 <div class="loading" id="loading"><span><i class="dot-pulse"></i>正在搭建书店…</span></div>
 <div class="notice" id="notice"></div>
@@ -253,6 +480,7 @@ const CDNS = [
 
 const noticeEl = document.getElementById('notice');
 const loadingEl = document.getElementById('loading');
+const POSTS = JSON.parse(document.getElementById('post-data').textContent || '[]');
 
 function fail(message) {
   noticeEl.textContent = message;
@@ -569,33 +797,83 @@ for (const sx of [-1.12, 1.12]) {
   }
 }
 
-// 桌上一摞书
-const stackColors = [0x8c3b36, 0x2f4858, 0xc9b48a];
-stackColors.forEach((hex, i) => {
-  const b = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.055, 0.24),
-    new THREE.MeshStandardMaterial({ color: hex, roughness: 0.88 })
-  );
-  b.position.set(-0.62 + rr(-0.02, 0.02), topY + 0.065 + i * 0.056, 0.18);
-  b.rotation.y = rr(-0.22, 0.22);
-  b.castShadow = true;
-  table.add(b);
-});
+/* ---------- 桌上六本可阅读的书 ---------- */
 
-// 摊开的书
-const openBook = new THREE.Group();
-openBook.position.set(0.62, topY + 0.045, 0.06);
-openBook.rotation.y = -0.22;
-table.add(openBook);
-for (const dir of [-1, 1]) {
-  const page = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.018, 0.42), matPaper);
-  page.position.set(dir * 0.152, 0, 0);
-  page.rotation.z = dir * 0.07;
-  page.castShadow = true;
-  openBook.add(page);
+const BOOK_TONES = [0x8c3b36, 0x2f4858, 0x4a5c3a, 0x7a5a3a, 0x4b3f6b, 0x9c7a4a];
+const BOOK_HEIGHT = 0.34;
+const BOOK_Y = 0.795 + BOOK_HEIGHT / 2;
+const featured = [];
+
+function shortTitle(title) {
+  const head = title.split(/[：:]/)[0].trim();
+  return head.length > 9 ? head.slice(0, 9) : head;
 }
-const spine = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.05, 0.42), new THREE.MeshStandardMaterial({ color: 0x5a3b2a }));
-openBook.add(spine);
+
+function spineTexture(title, hex) {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 512;
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = hex;
+  ctx.fillRect(0, 0, 128, 512);
+
+  ctx.strokeStyle = 'rgba(255, 228, 180, 0.55)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(12, 16, 104, 480);
+
+  ctx.save();
+  ctx.translate(64, 46);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = '#f7ecd6';
+  ctx.textBaseline = 'middle';
+
+  let size = 40;
+  do {
+    ctx.font = '600 ' + size + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+    size -= 1;
+  } while (ctx.measureText(title).width > 400 && size > 16);
+  ctx.fillText(title, 0, 0);
+  ctx.restore();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+POSTS.slice(0, 6).forEach((post, i) => {
+  const tone = BOOK_TONES[i % BOOK_TONES.length];
+  const hex = '#' + tone.toString(16).padStart(6, '0');
+  const coverMat = new THREE.MeshStandardMaterial({ color: tone, roughness: 0.78, metalness: 0.03 });
+  const spineMat = new THREE.MeshStandardMaterial({
+    map: spineTexture(shortTitle(post.title), hex),
+    roughness: 0.66,
+    metalness: 0.05,
+    emissive: 0xffb066,
+    emissiveIntensity: 0.06,
+  });
+
+  const book = new THREE.Mesh(
+    new THREE.BoxGeometry(0.13, BOOK_HEIGHT, 0.24),
+    [coverMat, coverMat, coverMat, coverMat, spineMat, coverMat]
+  );
+
+  const x = 0.25 + i * 0.32;
+  book.position.set(x, BOOK_Y, -0.42);
+  book.castShadow = true;
+  book.userData = {
+    index: i,
+    post,
+    home: { x, y: BOOK_Y, z: -0.42 },
+    target: { y: BOOK_Y, z: -0.42, ry: 0 },
+    hover: 0,
+    spineMat,
+  };
+
+  scene.add(book);
+  featured.push(book);
+});
 
 /* ---------- 台灯 ---------- */
 
@@ -777,6 +1055,7 @@ scene.add(dust);
 /* ---------- 相机控制 ---------- */
 
 const target = new THREE.Vector3(0.85, 1.15, -0.85);
+const targetGoal = target.clone();
 const baseRadius = portrait ? 10.8 : 8.0;
 const cam = { theta: -0.78, phi: 1.32, radius: baseRadius };
 const goal = { theta: cam.theta, phi: cam.phi, radius: cam.radius };
@@ -858,6 +1137,129 @@ canvas.addEventListener('touchmove', (e) => {
   }
 }, { passive: false });
 
+/* ---------- 点书阅读 ---------- */
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let hovered = -1;
+let reading = -1;
+let downX = 0;
+let downY = 0;
+let downTime = 0;
+
+const readerEl = document.getElementById('reader');
+const readerBody = document.getElementById('reader-body');
+const readerTitle = document.getElementById('reader-title');
+const readerDate = document.getElementById('reader-date');
+const readerTags = document.getElementById('reader-tags');
+const readerLink = document.getElementById('reader-link');
+const tipEl = document.getElementById('tip');
+const tipTitle = document.getElementById('tip-title');
+
+function pickBook(clientX, clientY) {
+  pointer.x = (clientX / innerWidth) * 2 - 1;
+  pointer.y = -(clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(featured, false);
+  return hits.length ? hits[0].object.userData.index : -1;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  const hit = pickBook(e.clientX, e.clientY);
+  if (hit !== hovered) {
+    hovered = hit;
+    canvas.style.cursor = hit >= 0 ? 'pointer' : 'grab';
+  }
+
+  if (hit >= 0 && !dragging) {
+    tipTitle.textContent = featured[hit].userData.post.title;
+    tipEl.style.left = e.clientX + 'px';
+    tipEl.style.top = e.clientY + 'px';
+    tipEl.hidden = false;
+    tipEl.classList.add('is-visible');
+  } else {
+    tipEl.classList.remove('is-visible');
+    tipEl.hidden = true;
+  }
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  downX = e.clientX;
+  downY = e.clientY;
+  downTime = performance.now();
+});
+
+function openReader(index) {
+  const book = featured[index];
+  const post = book.userData.post;
+  if (!post) return;
+
+  reading = index;
+  tipEl.classList.remove('is-visible');
+  tipEl.hidden = true;
+  readerTitle.textContent = post.title;
+  readerDate.textContent = post.date;
+  readerTags.textContent = (post.tags || []).join(' · ');
+  readerBody.innerHTML = post.content;
+  readerBody.scrollTop = 0;
+  readerLink.href = post.url;
+
+  readerEl.hidden = false;
+  requestAnimationFrame(() => readerEl.classList.add('is-open'));
+  document.body.classList.add('is-reading');
+
+  featured.forEach((b, i) => {
+    b.userData.target.z = i === index ? b.userData.home.z + 0.3 : b.userData.home.z;
+    b.userData.target.y = i === index ? b.userData.home.y + 0.05 : b.userData.home.y;
+    b.userData.target.ry = i === index ? -0.28 : 0;
+  });
+
+  const offset = innerWidth > 720 ? 0.26 : 0;
+  targetGoal.set(book.position.x + offset, 1.02, -0.34);
+  goal.radius = innerWidth > 720 ? 2.0 : 2.8;
+  goal.phi = 1.4;
+  goal.theta = 0.08;
+}
+
+function closeReader() {
+  if (reading < 0) return;
+  reading = -1;
+  readerEl.classList.remove('is-open');
+  document.body.classList.remove('is-reading');
+  setTimeout(() => {
+    if (reading < 0) readerEl.hidden = true;
+  }, 460);
+
+  featured.forEach((b) => {
+    b.userData.target.z = b.userData.home.z;
+    b.userData.target.y = b.userData.home.y;
+    b.userData.target.ry = 0;
+  });
+
+  targetGoal.set(0.85, 1.15, -0.85);
+  goal.radius = baseRadius;
+  goal.phi = 1.32;
+  goal.theta = -0.78;
+}
+
+canvas.addEventListener('pointerup', (e) => {
+  const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+  if (moved > 8 || performance.now() - downTime > 600) return;
+
+  const hit = pickBook(e.clientX, e.clientY);
+  if (hit >= 0) {
+    openReader(hit);
+  } else if (reading >= 0) {
+    closeReader();
+  }
+});
+
+document.getElementById('reader-close').addEventListener('click', closeReader);
+
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && reading >= 0) closeReader();
+});
+
 /* ---------- 循环 ---------- */
 
 let firstFrame = true;
@@ -866,9 +1268,24 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
-  if (!dragging && !reduceMotion) {
+  if (!dragging && !reduceMotion && reading < 0) {
     goal.theta += dt * 0.035;
   }
+
+  target.lerp(targetGoal, Math.min(1, dt * 3.2));
+
+  featured.forEach((book) => {
+    const state = book.userData;
+    book.position.y += (state.target.y - book.position.y) * Math.min(1, dt * 6);
+    book.position.z += (state.target.z - book.position.z) * Math.min(1, dt * 6);
+    book.rotation.y += (state.target.ry - book.rotation.y) * Math.min(1, dt * 6);
+
+    const wanted = hovered === state.index || reading === state.index ? 1 : 0;
+    state.hover += (wanted - state.hover) * Math.min(1, dt * 9);
+
+    state.spineMat.emissiveIntensity = 0.06 + state.hover * 0.42;
+    book.scale.setScalar(1 + state.hover * 0.045);
+  });
 
   cam.theta += (goal.theta - cam.theta) * Math.min(1, dt * 6);
   cam.phi += (goal.phi - cam.phi) * Math.min(1, dt * 6);
