@@ -14,22 +14,36 @@ layout: default
     </div>
 
     <h1 class="hero-title">{{ site.hero_title }}</h1>
-    <p class="hero-bio">{{ site.bio }}</p>
-    <div class="hero-links">
-      <a class="hero-link" href="mailto:{{ site.email }}">
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+
+    <div class="hero-actions">
+      <a class="icon-btn" href="https://github.com/{{ site.github }}" target="_blank" rel="noopener"
+         data-label="GitHub" aria-label="GitHub">
+        <svg viewBox="0 0 16 16" width="19" height="19" aria-hidden="true" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+      </a>
+
+      <button class="icon-btn" id="copy-email" type="button" data-email="{{ site.email }}"
+              data-label="复制邮箱" aria-label="复制邮箱 {{ site.email }}">
+        <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
           <rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
           <path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
         </svg>
-        {{ site.email }}
-      </a>
-      <a class="hero-link" href="https://github.com/{{ site.github }}" target="_blank" rel="noopener">
-        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="currentColor">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+      </button>
+
+      <a class="icon-btn" href="{{ '/three/' | relative_url }}" data-label="3D 书店" aria-label="3D 书店">
+        <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+          <path d="M12 3.2l7.2 4.1v9.4L12 20.8l-7.2-4.1V7.3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M4.8 7.3L12 11.4l7.2-4.1M12 11.4v9.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
         </svg>
-        GitHub
       </a>
-      <a class="hero-link" href="{{ '/about/' | relative_url }}">关于我 →</a>
+
+      <a class="icon-btn" href="{{ '/about/' | relative_url }}" data-label="关于" aria-label="关于">
+        <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M12 11v5.2M12 7.6v.7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </a>
     </div>
   </div>
 
@@ -39,7 +53,15 @@ layout: default
 <div class="home-body">
   <div class="section-head">
     <h2>最近文章</h2>
-    <span>{{ site.posts | size }} 篇</span>
+    <span id="post-count">{{ site.posts | size }} 篇</span>
+  </div>
+
+  <div class="filter-row" role="group" aria-label="按标签筛选文章">
+    <button class="filter-chip is-active" type="button" data-filter="all">全部</button>
+    {% assign tag_list = site.tags | sort %}
+    {% for tag in tag_list limit: 6 %}
+    <button class="filter-chip" type="button" data-filter="{{ tag[0] }}">{{ tag[0] }}</button>
+    {% endfor %}
   </div>
 
   <section class="post-list">
@@ -47,7 +69,7 @@ layout: default
     {% assign chars = post.content | strip_html | strip_newlines | size %}
     {% assign minutes = chars | divided_by: 400.0 | ceil %}
     {% if minutes < 1 %}{% assign minutes = 1 %}{% endif %}
-    <a class="post-card" href="{{ post.url | relative_url }}">
+    <a class="post-card" href="{{ post.url | relative_url }}" data-tags="{{ post.tags | join: ' ' }}">
       <div class="card-head">
         <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
         <span class="card-dot">·</span>

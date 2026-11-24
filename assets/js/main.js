@@ -156,5 +156,44 @@
         .catch(function () { toast('请手动复制地址栏链接'); });
     });
   }
+
+  /* ---------- 复制邮箱 ---------- */
+
+  var copyEmailBtn = document.getElementById('copy-email');
+  if (copyEmailBtn) {
+    copyEmailBtn.addEventListener('click', function () {
+      copyText(copyEmailBtn.dataset.email)
+        .then(function () { toast('邮箱已复制'); })
+        .catch(function () { toast('复制失败，请手动选择'); });
+    });
+  }
+
+  /* ---------- 标签筛选 ---------- */
+
+  var chips = document.querySelectorAll('.filter-chip');
+  var cards = document.querySelectorAll('.post-card');
+  var countEl = document.getElementById('post-count');
+
+  if (chips.length && cards.length) {
+    Array.prototype.forEach.call(chips, function (chip) {
+      chip.addEventListener('click', function () {
+        var filter = chip.dataset.filter;
+        var shown = 0;
+
+        Array.prototype.forEach.call(chips, function (c) {
+          c.classList.toggle('is-active', c === chip);
+        });
+
+        Array.prototype.forEach.call(cards, function (card) {
+          var tags = (card.dataset.tags || '').split(' ');
+          var match = filter === 'all' || tags.indexOf(filter) !== -1;
+          card.hidden = !match;
+          if (match) shown++;
+        });
+
+        if (countEl) countEl.textContent = shown + ' 篇';
+      });
+    });
+  }
 })();
 
