@@ -253,41 +253,57 @@ html[data-theme="dark"] .icon-sun { display: none; }
   margin: 0 auto;
 }
 
-.avatar {
-  display: flex;
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 14px 5px 5px;
+  border: 1px solid color-mix(in srgb, var(--fg) 9%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.mark {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
   background: linear-gradient(135deg, var(--accent), #8f6bff);
   color: #fff;
+  font-size: 14px;
   font-weight: 600;
-  line-height: 1;
   user-select: none;
 }
 
-.avatar-lg {
-  width: 92px;
-  height: 92px;
-  margin: 0 auto 22px;
-  border-radius: 28px;
-  font-size: 40px;
-  box-shadow:
-    0 0 0 7px color-mix(in srgb, var(--surface) 65%, transparent),
-    0 14px 38px color-mix(in srgb, var(--accent) 34%, transparent);
+.eyebrow-name {
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: 0.01em;
 }
 
-.hero-inner h1 {
-  margin: 0;
-  font-size: clamp(30px, 6vw, 42px);
-  line-height: 1.2;
-  letter-spacing: -0.03em;
+.eyebrow-sep { opacity: 0.4; }
+
+.eyebrow-role { color: var(--muted); }
+
+.hero-title {
+  margin: 24px 0 0;
+  font-size: clamp(27px, 5.2vw, 40px);
+  line-height: 1.38;
+  letter-spacing: -0.025em;
   font-weight: 700;
 }
 
 .hero-bio {
   margin: 16px auto 0;
-  max-width: 30em;
-  font-size: 15.5px;
-  line-height: 1.85;
+  max-width: 32em;
+  font-size: 15px;
+  line-height: 1.9;
   color: var(--muted);
 }
 
@@ -823,8 +839,10 @@ html[data-theme="dark"] .icon-sun { display: none; }
   .theme-toggle { width: 32px; height: 32px; margin-left: 2px; }
   .page-content { padding: 28px 16px 52px; }
   .hero-full { padding: 104px 18px 96px; }
-  .avatar-lg { width: 76px; height: 76px; border-radius: 23px; font-size: 33px; margin-bottom: 18px; }
-  .hero-bio { font-size: 14.5px; }
+  .hero-eyebrow { font-size: 12px; gap: 7px; padding: 4px 12px 4px 4px; }
+  .mark { width: 25px; height: 25px; border-radius: 8px; font-size: 13px; }
+  .hero-title { margin-top: 20px; font-size: 26px; line-height: 1.45; }
+  .hero-bio { font-size: 14px; }
   .home-body { padding: 0 16px; }
   .post-card { padding: 17px 18px; border-radius: 13px; }
   .post-card h3 { font-size: 17.5px; }

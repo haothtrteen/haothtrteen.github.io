@@ -6,8 +6,14 @@ layout: default
   <div class="hero-grid" aria-hidden="true"></div>
 
   <div class="hero-inner">
-    <div class="avatar avatar-lg" aria-hidden="true">皓</div>
-    <h1>{{ site.author }}</h1>
+    <div class="hero-eyebrow">
+      <span class="mark" aria-hidden="true">皓</span>
+      <span class="eyebrow-name">{{ site.author }}</span>
+      <span class="eyebrow-sep">·</span>
+      <span class="eyebrow-role">{{ site.role }}</span>
+    </div>
+
+    <h1 class="hero-title">{{ site.hero_title }}</h1>
     <p class="hero-bio">{{ site.bio }}</p>
     <div class="hero-links">
       <a class="hero-link" href="mailto:{{ site.email }}">
