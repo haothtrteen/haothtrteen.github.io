@@ -1,17 +1,70 @@
 ---
 layout: default
 ---
+{% assign chars = content | strip_html | strip_newlines | size %}
+{% assign minutes = chars | divided_by: 400.0 | ceil %}
+{% if minutes < 1 %}{% assign minutes = 1 %}{% endif %}
+
 <article class="post">
   <header class="post-header">
     <h1>{{ page.title }}</h1>
-    <p class="post-meta">
+    <div class="post-meta">
       <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y 年 %m 月 %d 日" }}</time>
-    </p>
+      <span class="dot">·</span>
+      <span>{{ minutes }} 分钟阅读</span>
+      <span class="dot">·</span>
+      <span class="views">阅读 <span id="busuanzi_value_page_pv">–</span></span>
+    </div>
+    {% if page.tags.size > 0 %}
+    <div class="tags">
+      {% for tag in page.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+    {% endif %}
   </header>
 
   <div class="post-content">
     {{ content }}
   </div>
+
+  <div class="post-actions">
+    <button class="action-btn like-btn" id="like-btn" type="button"
+            data-key="{{ page.date | date: '%Y%m%d' }}-{{ page.slug }}"
+            data-namespace="haothtrteen-blog"
+            aria-label="点赞这篇文章">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M12 20.2s-7.4-4.6-7.4-9.4a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 4.8-7.4 9.4-7.4 9.4z"
+              fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+      <span class="like-label">点赞</span>
+      <span class="like-count" id="like-count"></span>
+    </button>
+
+    <button class="action-btn" id="share-btn" type="button"
+            data-title="{{ page.title | escape }}" aria-label="分享这篇文章">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="18" cy="5.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="6" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="18" cy="18.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M8.3 10.7l7.4-3.8M8.3 13.3l7.4 3.8" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+      <span>分享</span>
+    </button>
+  </div>
+
+  <nav class="post-nav">
+    {% if page.previous %}
+    <a class="nav-prev" href="{{ page.previous.url | relative_url }}">
+      <span class="nav-label">上一篇</span>
+      <span class="nav-title">{{ page.previous.title }}</span>
+    </a>
+    {% endif %}
+    {% if page.next %}
+    <a class="nav-next" href="{{ page.next.url | relative_url }}">
+      <span class="nav-label">下一篇</span>
+      <span class="nav-title">{{ page.next.title }}</span>
+    </a>
+    {% endif %}
+  </nav>
 
   <footer class="post-footer">
     <a href="{{ '/' | relative_url }}">← 返回首页</a>

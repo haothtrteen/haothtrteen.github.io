@@ -1,6 +1,7 @@
 ---
 title: 三个保护工具：ShellVMP、EmojiShell 与 PEA
 description: 一个把 shell 脚本变成自保护产物，一个用 emoji 做视觉伪装，一个把加固变成可验证的工程流程
+tags: [脚本, 安全, 工具]
 ---
 这三个项目各自解决一小块"保护"问题，侧重点完全不同，放在一起看挺有意思。
 
