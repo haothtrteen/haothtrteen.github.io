@@ -614,7 +614,6 @@ html[data-theme="dark"] .icon-sun { display: none; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-top: 14px;
   padding: 5px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -624,6 +623,22 @@ html[data-theme="dark"] .icon-sun { display: none; }
   overflow-wrap: anywhere;
   transition: color 0.15s, border-color 0.15s;
 }
+
+.post-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.post-links .post-repo { margin-top: 0; }
+
+.post-project {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  color: var(--accent);
+}
+
+.post-project:hover { background: var(--accent-soft); }
 
 .post-repo:hover {
   color: var(--accent);

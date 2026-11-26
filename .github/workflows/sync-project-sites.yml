@@ -1,0 +1,40 @@
+name: Sync project sites
+
+# 把没有开启 Pages 的项目仓库的静态站，同步到本站的子目录：
+#   https://haothtrteen.github.io/iwphone-modules/
+# 项目仓库自身不需要开启 Pages。
+#
+# 新增项目：在 Sync 步骤里照抄一段，改仓库名、构建方式与输出目录即可。
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build IwphoneModules site
+        run: |
+          set -e
+          rm -rf /tmp/iwm iwphone-modules
+          git clone --depth 1 https://github.com/haothtrteen/IwphoneModules.git /tmp/iwm
+          python3 /tmp/iwm/tools/build_site.py --out iwphone-modules
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain iwphone-modules)" ]; then
+            echo "没有变化"
+            exit 0
+          fi
+          git add iwphone-modules
+          git commit -m "chore: sync IwphoneModules site"
+          git push
